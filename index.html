@@ -179,6 +179,20 @@
     text-align:center;padding:14px 6px;font-size:1.05rem;line-height:1.9;
   }
   .kbd-hint{font-size:.8rem;color:#667;}
+
+  /* ---------- 印刷ビュー（PC向け一括印刷） ---------- */
+  #printArea{display:none;}
+  @page{size:A4;margin:0;}
+  @media print{
+    body{background:#fff !important;}
+    .wrap{display:none !important;}
+    #printArea{display:block;}
+    #printArea img.sheetimg{
+      width:210mm;height:297mm;display:block;
+      page-break-after:always;break-after:page;
+    }
+    #printArea img.sheetimg:last-child{page-break-after:auto;break-after:auto;}
+  }
 </style>
 </head>
 <body>
@@ -251,6 +265,13 @@
         <button class="subbtn" id="btnMakePrint">🖨 このセットのシートを作る</button>
         <button class="subbtn" id="btnPrintBack">← もどる</button>
       </div>
+      <h3>PCで一気に印刷する</h3>
+      <p class="note">PCでは、シート画像をA4ちょうどに並べた印刷ビューから、そのまま印刷ダイアログを開けます。各シートがA4・1ページにぴったり収まります。プリンター側の設定は「A4・実際のサイズ（100%）」でどうぞ。iPhoneでは、今までどおり下の画像を長押しして保存する方法が確実です。</p>
+      <div class="subrow">
+        <button class="subbtn" id="btnPrintSetNow">🖨 このセットを全部印刷（PC向け）</button>
+        <button class="subbtn" id="btnPrintAllSets">🖨 全セットを一括印刷（PC向け・62ページ）</button>
+      </div>
+      <p class="note" id="printProgress"></p>
       <div class="printpages" id="printPages"></div>
     </div>
   </section>
@@ -277,6 +298,7 @@
     </div>
   </section>
 </div>
+<div id="printArea"></div>
 <script>'use strict';
 /* 選べる数学カード「無理数トランプ」データ
    1組＝同じ対象の4つの表現。表現ごとに色を分ける（4表現＝4色）。
@@ -1561,10 +1583,8 @@ function roundRectTop(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function makePrintPages() {
-  const set = currentSet;
-  const wrap = $('printPages');
-  wrap.innerHTML = '<p class="note">作成中…</p>';
+/* 1セット分のシート画像（データURL）を全ページ分作る */
+function buildSheetImages(set) {
   let cards = [];
   set.groups.forEach((g, gi) => {
     for (const f of set.make(g)) {
@@ -1577,9 +1597,9 @@ function makePrintPages() {
   if (set.id === 'sqrt') cards.push({ type: 'joker', tokens: set.joker.tokens, group: -1 });
   const perPage = PRINT.COLS * PRINT.ROWS;
   const pages = Math.ceil(cards.length / perPage);
-  wrap.innerHTML = '';
   const x0 = (PRINT.W - PRINT.COLS * PRINT.CW) / 2;
   const y0 = (PRINT.H - PRINT.ROWS * PRINT.CH) / 2;
+  const out = [];
   for (let p = 0; p < pages; p++) {
     const cv = document.createElement('canvas');
     cv.width = PRINT.W; cv.height = PRINT.H;
@@ -1591,15 +1611,52 @@ function makePrintPages() {
       const cy = y0 + Math.floor(i / PRINT.COLS) * PRINT.CH;
       drawCardOnSheet(ctx, card, cx, cy, set, card.group);
     });
+    out.push({ label: set.name + ' ― シート ' + (p + 1) + ' / ' + pages, dataUrl: cv.toDataURL('image/png') });
+  }
+  return out;
+}
+
+function makePrintPages() {
+  const set = currentSet;
+  const wrap = $('printPages');
+  wrap.innerHTML = '<p class="note">作成中…</p>';
+  const sheets = buildSheetImages(set);
+  wrap.innerHTML = '';
+  for (const sh of sheets) {
     const label = document.createElement('p');
     label.className = 'note';
-    label.textContent = set.name + ' ― シート ' + (p + 1) + ' / ' + pages + '（この画像を長押しして保存し、A4・実際のサイズで印刷）';
+    label.textContent = sh.label + '（この画像を長押しして保存し、A4・実際のサイズで印刷）';
     wrap.appendChild(label);
     const img = document.createElement('img');
     img.alt = label.textContent;
-    img.src = cv.toDataURL('image/png');
+    img.src = sh.dataUrl;
     wrap.appendChild(img);
   }
+}
+
+/* PC向け：シート画像を A4 ちょうどの印刷ビューに並べて印刷ダイアログを開く */
+async function printSets(sets) {
+  const prog = $('printProgress');
+  const area = $('printArea');
+  area.innerHTML = '';
+  let total = 0;
+  for (const set of sets) {
+    const sheets = buildSheetImages(set);
+    for (const sh of sheets) {
+      const img = document.createElement('img');
+      img.className = 'sheetimg';
+      img.src = sh.dataUrl;
+      img.alt = sh.label;
+      area.appendChild(img);
+      total++;
+    }
+    if (prog) prog.textContent = '印刷用シートを作成中… ' + total + ' ページ';
+    await wait(30);
+  }
+  await Promise.all([...area.querySelectorAll('img')].map(im =>
+    im.complete && im.naturalWidth ? Promise.resolve() : new Promise(r => { im.onload = r; im.onerror = r; })));
+  if (prog) prog.textContent = total + ' ページの印刷ダイアログを開きます。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
+  window.print();
 }
 
 /* ================================================================
@@ -1638,6 +1695,8 @@ function wire() {
   $('btnTableBack').addEventListener('click', () => { SoundBox.click(); show(returnTo === 'game' && (Mem.active || Baba.active || Flash.active) ? 'game' : 'home'); });
   $('btnPrint').addEventListener('click', () => { SoundBox.click(); $('printPages').innerHTML = ''; show('print'); });
   $('btnMakePrint').addEventListener('click', () => { SoundBox.click(); makePrintPages(); });
+  $('btnPrintSetNow').addEventListener('click', () => { SoundBox.click(); printSets([currentSet]); });
+  $('btnPrintAllSets').addEventListener('click', () => { SoundBox.click(); printSets(SETS); });
   $('btnPrintBack').addEventListener('click', () => { SoundBox.click(); show('home'); });
   $('btnAbout').addEventListener('click', () => { SoundBox.click(); show('about'); });
   $('btnAboutBack').addEventListener('click', () => { SoundBox.click(); show('home'); });
