@@ -126,7 +126,7 @@
   .pcard:disabled{cursor:default;}
 
   /* 教科書表記 */
-  .var{font-style:italic;}
+  .var{font-style:italic;font-family:"Times New Roman","Hiragino Mincho ProN","YuMincho","Noto Serif JP",serif;}
   .rad{white-space:nowrap;}
   .rad-body{border-top:.09em solid currentColor;padding:0 .07em 0 .02em;}
   .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 .08em;}
@@ -431,7 +431,7 @@ function factorCards(g) {
     { type: 0, tokens: f1 },
     { type: 1, tokens: f2 },
     { type: 2, tokens: f3 },
-    { type: 3, tokens: [T('x'), T('='), T('10'), T(' のとき '), T(val)] },
+    { type: 3, tokens: [V('x'), T('='), T('10'), T(' のとき '), T(val)] },
   ];
 }
 
@@ -687,8 +687,8 @@ function graphSVG(aN, aD, b) {
     '<line x1="' + X(0) + '" y1="0" x2="' + X(0) + '" y2="100" stroke="#5a6a76" stroke-width="1.1"/>' +
     '<line x1="0" y1="' + Y(0) + '" x2="100" y2="' + Y(0) + '" stroke="#5a6a76" stroke-width="1.1"/>' +
     line + dot +
-    '<text x="93" y="' + (Y(0) - 2.5) + '" font-size="8" fill="#5a6a76" font-style="italic">x</text>' +
-    '<text x="' + (X(0) + 2.5) + '" y="9" font-size="8" fill="#5a6a76" font-style="italic">y</text>' +
+    '<text x="93" y="' + (Y(0) - 2.5) + '" font-size="8" fill="#5a6a76" font-style="italic" font-family="\'Times New Roman\',serif">x</text>' +
+    '<text x="' + (X(0) + 2.5) + '" y="9" font-size="8" fill="#5a6a76" font-style="italic" font-family="\'Times New Roman\',serif">y</text>' +
     '<text x="' + (X(0) + 2) + '" y="' + (Y(0) + 8.5) + '" font-size="7.5" fill="#5a6a76">O</text>' +
     '</svg>';
 }
@@ -1389,12 +1389,18 @@ const PRINT = { W: 2480, H: 3508, CW: 827, CH: 1063, COLS: 2, ROWS: 3 };
 function serifFont(size, italic) {
   return (italic ? 'italic ' : '') + size + 'px "Hiragino Mincho ProN","YuMincho","Noto Serif JP","Times New Roman",serif';
 }
+/* 変数（x, y など）専用：教科書の数式イタリック。
+   明朝系フォントは英字イタリックを持たず端末によって立ったままになるため、
+   本物のイタリック書体を持つ Times New Roman を先頭にする。 */
+function serifVarFont(size) {
+  return 'italic ' + size + 'px "Times New Roman","Hiragino Mincho ProN","YuMincho","Noto Serif JP",serif';
+}
 function measureTokens(ctx, tokens, size) {
   let w = 0;
   for (const tok of tokens) {
     switch (tok.k) {
       case 't': ctx.font = serifFont(size); w += ctx.measureText(tok.s).width; break;
-      case 'v': ctx.font = serifFont(size, true); w += ctx.measureText(tok.s).width; break;
+      case 'v': ctx.font = serifVarFont(size); w += ctx.measureText(tok.s).width; break;
       case 'rad': {
         ctx.font = serifFont(size);
         w += ctx.measureText('√').width + measureTokens(ctx, tok.body, size) + size * 0.08;
@@ -1431,7 +1437,7 @@ function drawTokens(ctx, tokens, x, yBase, size) {
   for (const tok of tokens) {
     switch (tok.k) {
       case 't': ctx.font = serifFont(size); ctx.fillText(tok.s, cx, yBase); cx += ctx.measureText(tok.s).width; break;
-      case 'v': ctx.font = serifFont(size, true); ctx.fillText(tok.s, cx, yBase); cx += ctx.measureText(tok.s).width; break;
+      case 'v': ctx.font = serifVarFont(size); ctx.fillText(tok.s, cx, yBase); cx += ctx.measureText(tok.s).width; break;
       case 'rad': {
         ctx.font = serifFont(size);
         const rw = ctx.measureText('√').width;
@@ -1481,7 +1487,7 @@ function drawTokens(ctx, tokens, x, yBase, size) {
         let xx = cx;
         const colX = [xx];
         for (const wdt of colW) { ctx.strokeRect(xx, top, wdt, rowH * 2); xx += wdt; colX.push(xx); }
-        ctx.font = serifFont(s2, true); ctx.fillStyle = '#1d2a35'; ctx.textAlign = 'left';
+        ctx.font = serifVarFont(s2); ctx.fillStyle = '#1d2a35'; ctx.textAlign = 'left';
         ctx.fillText('x', cx + size * 0.14, top + rowH * 0.72);
         ctx.fillText('y', cx + size * 0.14, top + rowH * 1.72);
         for (let ci = 0; ci < tok.xs.length; ci++) {
