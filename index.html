@@ -268,7 +268,7 @@
         <button class="subbtn" id="btnPrintBack">← もどる</button>
       </div>
       <h3>一気に印刷する（PC・iPhone）</h3>
-      <p class="note">ボタンを押すと、印刷用PDFを作ります（全セットの場合は、セットごとのPDFリンクが並びます）。準備ができたら「PDFを開く」ボタンを押してPDFを表示し、共有ボタン（PCでは印刷ボタン）から印刷してください。PDFなので、ページがずれたり白紙が入ったりしません。プリンター側の設定は「A4・実際のサイズ（100%）」でどうぞ。下の画像を長押しして保存する方法も、今までどおり使えます。</p>
+      <p class="note">ボタンを押すと、印刷用PDFを作ります（全セットの場合は、セットごとのPDFリンクが並びます）。準備ができたら「PDFを開く」ボタンを押してPDFを表示してください。PDFが開いたら、画面を一度タップしてバーを出し、共有ボタン（四角に上向き矢印のマーク）を押して、出てきたメニューの「プリント」を選んでください（PCでは印刷ボタンから印刷できます）。PDFなので、ページがずれたり白紙が入ったりしません。プリンター側の設定は「A4・実際のサイズ（100%）」でどうぞ。下の画像を長押しして保存する方法も、今までどおり使えます。</p>
       <div class="subrow">
         <button class="subbtn" id="btnPrintSetNow">🖨 このセットを全部印刷</button>
         <button class="subbtn" id="btnPrintAllSets">🖨 全セットを一括印刷（62ページ）</button>
@@ -1763,7 +1763,7 @@ async function makePrintPdf(sets) {
       single.href = m.url;
       single.classList.remove('hidden');
       $('printReadyNote').textContent = '全 ' + m.pages + ' ページ（' + Math.max(1, Math.round(m.size / 1024)) + ' KB）';
-      if (prog) prog.textContent = 'PDFの準備ができました。下の「PDFを開く」ボタンを押してPDFを表示し、共有ボタン（PCでは印刷ボタン）から印刷してください。ページがずれたり白紙が入ったりしません。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
+      if (prog) prog.textContent = 'PDFの準備ができました。下の「PDFを開く」ボタンを押してPDFを表示してください。PDFが開いたら、画面を一度タップしてバーを出し、共有ボタン（四角に上向き矢印のマーク）を押して、出てきたメニューの「プリント」を選んでください。（PCでは印刷ボタンから印刷できます）ページがずれたり白紙が入ったりしません。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
     } else {
       single.classList.add('hidden');
       for (const m of made) {
@@ -1777,7 +1777,7 @@ async function makePrintPdf(sets) {
       }
       list.classList.remove('hidden');
       $('printReadyNote').textContent = '全 ' + made.reduce((s, m) => s + m.pages, 0) + ' ページ・' + made.length + 'セット分';
-      if (prog) prog.textContent = 'PDFの準備ができました。セットごとに分かれたPDFのリンクが下に並んでいます。開きたいセットのリンクを押してPDFを表示し、共有ボタン（PCでは印刷ボタン）から印刷してください。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
+      if (prog) prog.textContent = 'PDFの準備ができました。セットごとに分かれたPDFのリンクが下に並んでいます。開きたいセットのリンクを押してPDFを表示してください。PDFが開いたら、画面を一度タップしてバーを出し、共有ボタン（四角に上向き矢印のマーク）を押して、出てきたメニューの「プリント」を選んでください。（PCでは印刷ボタンから印刷できます）プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
     }
     bar.classList.remove('hidden');
     bar.scrollIntoView({ behavior: 'smooth', block: 'center' });
