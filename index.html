@@ -168,7 +168,7 @@
   /* 上線は√の上腕に重なる位置から引く（背景グラデーションで線だけを字形の高さに合わせる） */
   .rad-body{
     background-image:linear-gradient(currentColor,currentColor);
-    background-size:100% .085em;background-repeat:no-repeat;background-position:0 .145em;
+    background-size:100% .065em;background-repeat:no-repeat;background-position:0 .145em;
     margin-left:-.26em;padding:0 .05em 0 .26em;
   }
   .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 .08em;}
@@ -1711,7 +1711,7 @@ function drawTokens(ctx, tokens, x, yBase, size) {
         const bodyW = measureTokens(ctx, tok.body, size);
         const topY = yBase - size * (tokensHaveSup(tok.body) ? 1.24 : 0.84);
         ctx.beginPath();
-        ctx.lineWidth = Math.max(2, size * 0.055);
+        ctx.lineWidth = Math.max(2, size * 0.048);
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
         ctx.moveTo(cx + radW * 0.04, yBase - size * 0.32);
