@@ -268,15 +268,16 @@
         <button class="subbtn" id="btnPrintBack">← もどる</button>
       </div>
       <h3>一気に印刷する（PC・iPhone）</h3>
-      <p class="note">シート画像をA4ちょうどに並べた印刷ビューから印刷できます。各シートがA4・1ページにぴったり収まります。ボタンを押すとまずシートを準備し、準備ができたら「印刷する」ボタンが出ます。そのボタンを押すと印刷画面が開きます（iPhoneの仕様に合わせた2段階の形です）。プリンター側の設定は「A4・実際のサイズ（100%）」でどうぞ。下の画像を長押しして保存する方法も、今までどおり使えます。</p>
+      <p class="note">ボタンを押すと、印刷用PDFを作ります（全セットの場合は、セットごとのPDFリンクが並びます）。準備ができたら「PDFを開く」ボタンを押してPDFを表示し、共有ボタン（PCでは印刷ボタン）から印刷してください。PDFなので、ページがずれたり白紙が入ったりしません。プリンター側の設定は「A4・実際のサイズ（100%）」でどうぞ。下の画像を長押しして保存する方法も、今までどおり使えます。</p>
       <div class="subrow">
         <button class="subbtn" id="btnPrintSetNow">🖨 このセットを全部印刷</button>
         <button class="subbtn" id="btnPrintAllSets">🖨 全セットを一括印刷（62ページ）</button>
       </div>
       <p class="note" id="printProgress"></p>
-      <div class="subrow hidden" id="printReadyBar">
-        <button class="subbtn" id="btnPrintNow" style="background:#2e7d5b;border-color:#2e7d5b;color:#fff;font-weight:bold;font-size:1rem;padding:10px 22px;">🖨 印刷する</button>
+      <div class="subrow hidden" id="printReadyBar" style="flex-wrap:wrap;">
+        <a class="subbtn" id="btnOpenPdf" href="#" download="murisuu-trump-sheets.pdf" style="background:#2e7d5b;border-color:#2e7d5b;color:#fff;font-weight:bold;font-size:1rem;padding:10px 22px;text-decoration:none;">📄 PDFを開く</a>
         <span class="note" id="printReadyNote"></span>
+        <div id="pdfLinkList" class="hidden" style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;"></div>
       </div>
       <div class="printpages" id="printPages"></div>
     </div>
@@ -304,7 +305,6 @@
     </div>
   </section>
 </div>
-<div id="printArea"></div>
 <script>'use strict';
 /* 選べる数学カード「無理数トランプ」データ
    1組＝同じ対象の4つの表現。表現ごとに色を分ける（4表現＝4色）。
@@ -1603,8 +1603,8 @@ function buildSheetCards(set) {
   if (set.id === 'sqrt') cards.push({ type: 'joker', tokens: set.joker.tokens, group: -1 });
   return cards;
 }
-/* p ページ目（0始まり）のシート画像を1枚だけ作る */
-function buildSheetImageAt(set, p) {
+/* p ページ目（0始まり）のシートを canvas に描く */
+function buildSheetCanvas(set, p) {
   const cards = buildSheetCards(set);
   const perPage = PRINT.COLS * PRINT.ROWS;
   const pages = Math.ceil(cards.length / perPage);
@@ -1620,7 +1620,12 @@ function buildSheetImageAt(set, p) {
     const cy = y0 + Math.floor(i / PRINT.COLS) * PRINT.CH;
     drawCardOnSheet(ctx, card, cx, cy, set, card.group);
   });
-  return { label: set.name + ' ― シート ' + (p + 1) + ' / ' + pages, dataUrl: cv.toDataURL('image/png') };
+  return { label: set.name + ' ― シート ' + (p + 1) + ' / ' + pages, canvas: cv };
+}
+/* p ページ目のシート画像（データURL）を1枚作る */
+function buildSheetImageAt(set, p) {
+  const { label, canvas } = buildSheetCanvas(set, p);
+  return { label, dataUrl: canvas.toDataURL('image/png') };
 }
 /* 1セット分のシート画像を全ページ分作る */
 function buildSheetImages(set) {
@@ -1665,45 +1670,115 @@ async function makePrintPages() {
   }
 }
 
-/* シート画像を A4 ちょうどの印刷ビューに並べる（生成まで）。
-   印刷そのものは、利用者のタップから直接呼ぶ必要がある（iOS の仕様で、
-   非同期処理の後の window.print() は「自動印刷」と判定され禁止ダイアログが出る）。
-   そのため生成完了後に「印刷する」ボタンを出し、そのタップで print を呼ぶ。 */
-async function printSets(sets) {
+/* ---------- 一括印刷用 PDF の生成 ----------
+   iOS Safari の CSS ページ分割は実機で白紙ページが混ざるため、印刷は
+   「シート画像をまとめた PDF を作って開く」方式にする。PDF はページ構成が
+   決定的で、開いた先の共有（プリント）からそのまま印刷できる。 */
+function dataUrlToBytes(durl) {
+  const b64 = durl.split(',')[1];
+  const bin = atob(b64);
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return u8;
+}
+/* pages: [{bytes: JPEG の Uint8Array, w, h}] から最小構成の PDF を組み立てる */
+function buildPdfBlob(pages) {
+  const enc = new TextEncoder();
+  const chunks = [];
+  let offset = 0;
+  const push = (u8) => { chunks.push(u8); offset += u8.length; };
+  const pushStr = (s) => push(enc.encode(s));
+  const PW = 595.28, PH = 841.89; // A4（pt）
+  const n = pages.length;
+  const objPage = i => 3 + i * 3, objImg = i => 4 + i * 3, objCont = i => 5 + i * 3;
+  const offsets = new Array(3 + n * 3).fill(0);
+  push(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A, 0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A])); // %PDF-1.4 + バイナリマーカー
+  const beginObj = (num) => { offsets[num] = offset; pushStr(num + ' 0 obj\n'); };
+  beginObj(1);
+  pushStr('<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+  beginObj(2);
+  pushStr('<< /Type /Pages /Kids [' + pages.map((_, i) => objPage(i) + ' 0 R').join(' ') + '] /Count ' + n + ' >>\nendobj\n');
+  pages.forEach((pg, i) => {
+    beginObj(objPage(i));
+    pushStr('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Resources << /XObject << /Im' + i + ' ' + objImg(i) + ' 0 R >> >> /Contents ' + objCont(i) + ' 0 R >>\nendobj\n');
+    beginObj(objImg(i));
+    pushStr('<< /Type /XObject /Subtype /Image /Width ' + pg.w + ' /Height ' + pg.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + pg.bytes.length + ' >>\nstream\n');
+    push(pg.bytes);
+    pushStr('\nendstream\nendobj\n');
+    const content = 'q ' + PW + ' 0 0 ' + PH + ' 0 0 cm /Im' + i + ' Do Q';
+    beginObj(objCont(i));
+    pushStr('<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream\nendobj\n');
+  });
+  const xrefPos = offset;
+  const total = 3 + n * 3;
+  pushStr('xref\n0 ' + total + '\n');
+  pushStr('0000000000 65535 f \n');
+  for (let k = 1; k < total; k++) pushStr(String(offsets[k]).padStart(10, '0') + ' 00000 n \n');
+  pushStr('trailer\n<< /Size ' + total + ' /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF');
+  return new Blob(chunks, { type: 'application/pdf' });
+}
+
+let currentPdfUrls = [];
+let makingPdf = false;
+/* sets の各セットごとに PDF を作る。1ファイルが大きいとブラウザが開けない
+   場合があるため、全セット一括でも「セットごとの PDF リンク」を並べる形にする。 */
+async function makePrintPdf(sets) {
+  if (makingPdf) return;
+  makingPdf = true;
   const prog = $('printProgress');
-  const area = $('printArea');
   const bar = $('printReadyBar');
+  const list = $('pdfLinkList');
+  const single = $('btnOpenPdf');
   if (bar) bar.classList.add('hidden');
-  area.innerHTML = '';
-  let total = 0;
+  if (list) { list.innerHTML = ''; list.classList.add('hidden'); }
   try {
+    let totalPages = 0;
+    for (const set of sets) totalPages += Math.ceil(buildSheetCards(set).length / (PRINT.COLS * PRINT.ROWS));
+    let done = 0;
+    const made = [];
     for (const set of sets) {
-      const pages = Math.ceil(buildSheetCards(set).length / (PRINT.COLS * PRINT.ROWS));
-      for (let p = 0; p < pages; p++) {
-        const sh = buildSheetImageAt(set, p);
-        const pageDiv = document.createElement('div');
-        pageDiv.className = 'sheetpage';
-        const img = document.createElement('img');
-        img.className = 'sheetimg';
-        img.src = sh.dataUrl;
-        img.alt = sh.label;
-        pageDiv.appendChild(img);
-        area.appendChild(pageDiv);
-        total++;
-        if (prog) prog.textContent = '印刷用シートを作成中… ' + total + ' ページ';
+      const cnt = Math.ceil(buildSheetCards(set).length / (PRINT.COLS * PRINT.ROWS));
+      const pages = [];
+      for (let p = 0; p < cnt; p++) {
+        const { canvas } = buildSheetCanvas(set, p);
+        const bytes = dataUrlToBytes(canvas.toDataURL('image/jpeg', 0.92));
+        pages.push({ bytes, w: canvas.width, h: canvas.height });
+        done++;
+        if (prog) prog.textContent = '印刷用PDFを作成中… ' + done + ' / ' + totalPages + ' ページ';
         await wait(30);
       }
+      const blob = buildPdfBlob(pages);
+      made.push({ set, pages: cnt, size: blob.size, url: URL.createObjectURL(blob) });
     }
-    await Promise.all([...area.querySelectorAll('img')].map(im =>
-      im.complete && im.naturalWidth ? Promise.resolve() : new Promise(r => { im.onload = r; im.onerror = r; })));
-    if (prog) prog.textContent = total + ' ページの準備ができました。下の「印刷する」ボタンを押してください。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
-    if (bar) {
-      $('printReadyNote').textContent = '全 ' + total + ' ページ';
-      bar.classList.remove('hidden');
-      bar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    for (const u of currentPdfUrls) URL.revokeObjectURL(u);
+    currentPdfUrls = made.map(m => m.url);
+    if (made.length === 1) {
+      const m = made[0];
+      single.href = m.url;
+      single.classList.remove('hidden');
+      $('printReadyNote').textContent = '全 ' + m.pages + ' ページ（' + Math.max(1, Math.round(m.size / 1024)) + ' KB）';
+      if (prog) prog.textContent = 'PDFの準備ができました。下の「PDFを開く」ボタンを押してPDFを表示し、共有ボタン（PCでは印刷ボタン）から印刷してください。ページがずれたり白紙が入ったりしません。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
+    } else {
+      single.classList.add('hidden');
+      for (const m of made) {
+        const a = document.createElement('a');
+        a.className = 'subbtn';
+        a.href = m.url;
+        a.download = 'murisuu-trump-' + m.set.id + '.pdf';
+        a.style.cssText = 'background:#2e7d5b;border-color:#2e7d5b;color:#fff;font-weight:bold;text-decoration:none;';
+        a.textContent = '📄 ' + m.set.name + '（' + m.pages + 'ページ）';
+        list.appendChild(a);
+      }
+      list.classList.remove('hidden');
+      $('printReadyNote').textContent = '全 ' + made.reduce((s, m) => s + m.pages, 0) + ' ページ・' + made.length + 'セット分';
+      if (prog) prog.textContent = 'PDFの準備ができました。セットごとに分かれたPDFのリンクが下に並んでいます。開きたいセットのリンクを押してPDFを表示し、共有ボタン（PCでは印刷ボタン）から印刷してください。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
     }
+    bar.classList.remove('hidden');
+    bar.scrollIntoView({ behavior: 'smooth', block: 'center' });
   } catch (e) {
-    if (prog) prog.textContent = 'シートを作成できませんでした。もう一度お試しください。（' + (e && e.message ? e.message : e) + '）';
+    if (prog) prog.textContent = 'PDFを作成できませんでした。もう一度お試しください。（' + (e && e.message ? e.message : e) + '）';
+  } finally {
+    makingPdf = false;
   }
 }
 
@@ -1743,10 +1818,9 @@ function wire() {
   $('btnTableBack').addEventListener('click', () => { SoundBox.click(); show(returnTo === 'game' && (Mem.active || Baba.active || Flash.active) ? 'game' : 'home'); });
   $('btnPrint').addEventListener('click', () => { SoundBox.click(); $('printPages').innerHTML = ''; $('printProgress').textContent = ''; $('printReadyBar').classList.add('hidden'); show('print'); });
   $('btnMakePrint').addEventListener('click', () => { SoundBox.click(); makePrintPages(); });
-  $('btnPrintSetNow').addEventListener('click', () => { SoundBox.click(); printSets([currentSet]); });
-  $('btnPrintAllSets').addEventListener('click', () => { SoundBox.click(); printSets(SETS); });
-  // 印刷はタップのハンドラから直接呼ぶ（iOS の自動印刷ブロックを避けるため、必ず先頭で）
-  $('btnPrintNow').addEventListener('click', () => { window.print(); SoundBox.click(); });
+  $('btnPrintSetNow').addEventListener('click', () => { SoundBox.click(); makePrintPdf([currentSet]); });
+  $('btnPrintAllSets').addEventListener('click', () => { SoundBox.click(); makePrintPdf(SETS); });
+  $('btnOpenPdf').addEventListener('click', (e) => { if (!currentPdfUrls.length) { e.preventDefault(); return; } SoundBox.click(); });
   $('btnPrintBack').addEventListener('click', () => { SoundBox.click(); show('home'); });
   $('btnAbout').addEventListener('click', () => { SoundBox.click(); show('about'); });
   $('btnAboutBack').addEventListener('click', () => { SoundBox.click(); show('home'); });
