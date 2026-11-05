@@ -21,10 +21,40 @@
   }
   .wrap{max-width:760px;margin:0 auto;padding:14px 12px 40px;}
   header.top{
-    color:#fdf6dd;text-align:center;padding:10px 4px 2px;
+    color:#fdf6dd;text-align:center;
+    background:radial-gradient(130% 150% at 50% 0%, #3d6b52 0%, #274a38 55%, #173325 100%);
+    border:1px solid rgba(244,197,66,.35);
+    border-radius:16px;padding:18px 10px 14px;margin-top:2px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22), inset 0 -22px 34px rgba(0,0,0,.38), 0 12px 26px rgba(0,0,0,.35);
   }
-  header.top h1{font-size:1.42rem;margin:.2em 0 .1em;letter-spacing:.02em;}
-  header.top h1 .sub{display:block;font-size:.78rem;font-weight:normal;opacity:.85;margin-top:.35em;}
+  header.top h1{font-size:1rem;margin:.1em 0 0;letter-spacing:.02em;}
+  .logo-en{
+    display:block;font-family:Georgia,'Times New Roman','Hiragino Mincho ProN',serif;font-style:italic;font-weight:bold;
+    font-size:2.35rem;line-height:1.12;
+    background:linear-gradient(180deg,#fae58d 0%,#f4c542 48%,#cf9a2e 82%,#a8741a 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));
+  }
+  @supports not ((-webkit-background-clip: text) or (background-clip: text)){
+    .logo-en{color:#f4c542;background:none;}
+  }
+  .logo-jp{display:block;font-size:1.02rem;font-weight:bold;color:#f7d774;letter-spacing:.14em;margin-top:.3em;}
+  header.top h1 .sub{display:block;font-size:.78rem;font-weight:normal;opacity:.88;margin-top:.6em;}
+  .hero-cards{display:flex;justify-content:center;gap:12px;margin:2px 0 12px;}
+  .hcard{
+    width:56px;height:76px;background:#fffdf4;border-radius:8px;flex:none;
+    box-shadow:0 8px 16px rgba(0,0,0,.45);
+    display:flex;flex-direction:column;overflow:hidden;
+    animation:hbob 3.4s ease-in-out infinite alternate;
+  }
+  .hcard .band{height:14px;flex:none;}
+  .hcard .sym{flex:1;display:flex;align-items:center;justify-content:center;font-family:Georgia,'Times New Roman',serif;font-size:1.3rem;color:#22303c;}
+  .hcard:nth-child(1){rotate:-8deg;animation-delay:0s;}
+  .hcard:nth-child(2){rotate:-2.5deg;animation-delay:.5s;}
+  .hcard:nth-child(3){rotate:2.5deg;animation-delay:1s;}
+  .hcard:nth-child(4){rotate:8deg;animation-delay:1.5s;}
+  @keyframes hbob{from{translate:0 0;}to{translate:0 -7px;}}
+  @media (prefers-reduced-motion: reduce){ .hcard{animation:none;} }
   .panel{
     background:var(--paper);border-radius:14px;padding:14px 14px 16px;margin-top:12px;
     box-shadow:var(--shadow);
@@ -204,7 +234,13 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <h1>Math Quartet<span style="color:#f4c542"> ― 4枚そろえる数学カード</span>
+    <div class="hero-cards" aria-hidden="true">
+      <div class="hcard"><div class="band" style="background:#cf3f38"></div><div class="sym">√2</div></div>
+      <div class="hcard"><div class="band" style="background:#2470a0"></div><div class="sym"><i>x</i>²</div></div>
+      <div class="hcard"><div class="band" style="background:#1e8449"></div><div class="sym">½</div></div>
+      <div class="hcard"><div class="band" style="background:#7d3c98"></div><div class="sym"><i>π</i></div></div>
+    </div>
+    <h1><span class="logo-en">Math Quartet</span><span class="logo-jp"> ― 4枚そろえる数学カード ―</span>
       <span class="sub">同じ対象の「ちがう表し方」を4枚そろえるカードゲーム ― 13の単元セットから選べます</span>
     </h1>
   </header>
@@ -1599,6 +1635,15 @@ function serifFont(size, italic) {
 function serifVarFont(size) {
   return 'italic ' + size + 'px "Times New Roman","Hiragino Mincho ProN","YuMincho","Noto Serif JP",serif';
 }
+/* トークン列に上付き指数が含まれるか（根号の上線の高さ判定用） */
+function tokensHaveSup(tokens) {
+  return tokens.some(t =>
+    t.k === 'sup' ||
+    (t.k === 'rad' && tokensHaveSup(t.body)) ||
+    (t.k === 'frac' && (tokensHaveSup(t.n) || tokensHaveSup(t.d))) ||
+    (t.k === 'sys' && t.lines.some(l => tokensHaveSup(l))) ||
+    (t.k === 'table' && (t.xs.some(c => tokensHaveSup(c)) || t.ys.some(c => tokensHaveSup(c)))));
+}
 function measureTokens(ctx, tokens, size) {
   let w = 0;
   for (const tok of tokens) {
@@ -1655,9 +1700,10 @@ function drawTokens(ctx, tokens, x, yBase, size) {
         drawTokens(ctx, tok.body, cx + rw, yBase, size);
         ctx.beginPath();
         ctx.lineWidth = Math.max(2, size * 0.055);
-        const ly = yBase - size * 0.82;
+        // 指数（上付き）を含む根号は、上線を指数の上まで持ち上げる
+        const ly = yBase - size * (tokensHaveSup(tok.body) ? 1.24 : 0.82);
         ctx.moveTo(cx + rw * 0.82, ly);
-        ctx.lineTo(cx + rw + bodyW + size * 0.05, ly);
+        ctx.lineTo(cx + rw + bodyW + size * 0.08, ly);
         ctx.stroke();
         cx += rw + bodyW + size * 0.08;
         break;
@@ -1767,6 +1813,52 @@ function drawTokens(ctx, tokens, x, yBase, size) {
   return cx - x;
 }
 
+/* カード内幅 maxW に収まるよう、フォント縮小→（長い文章は）複数行に折り返す配置を決める。
+   1行に収まる場合は従来どおり1行。折り返しは句読点・空白を優先し、数字の途中では割らない。 */
+function layoutCardTokens(ctx, tokens, maxW) {
+  let size = 128;
+  while (size > 44 && measureTokens(ctx, tokens, size) > maxW) size -= 6;
+  if (measureTokens(ctx, tokens, size) <= maxW) return { size, lines: [tokens] };
+  size = 64;
+  const pieces = [];
+  const pushTextPieces = (s) => {
+    // 句読点・空白の直後で区切り、残りが長い場合は数字列を壊さずに割る
+    const segs = s.split(/(?<=[。、！？\s])/);
+    for (const seg of segs) {
+      if (!seg) continue;
+      if (measureTokens(ctx, [{ k: 't', s: seg }], size) <= maxW) { pieces.push({ k: 't', s: seg }); continue; }
+      // 長い区間は文字単位に落とす（数字と小数点はひとまとめに扱う）
+      let cur = '';
+      const flush = () => { if (cur) { pieces.push({ k: 't', s: cur }); cur = ''; } };
+      let i = 0;
+      while (i < seg.length) {
+        let unit = seg[i];
+        if (/[0-9]/.test(unit)) { while (i + 1 < seg.length && /[0-9.]/.test(seg[i + 1])) { i++; unit += seg[i]; } }
+        if (cur && measureTokens(ctx, [{ k: 't', s: cur + unit }], size) > maxW * 0.92) flush();
+        cur += unit; i++;
+      }
+      flush();
+    }
+  };
+  for (const tok of tokens) {
+    if (tok.k === 't') pushTextPieces(tok.s);
+    else pieces.push(tok);
+  }
+  for (let i = 0; i < pieces.length - 1; i++) {
+    const a = pieces[i], b = pieces[i + 1];
+    if (a.k === 't' && b.k === 't' && /^\d+\s?$/.test(a.s)) { a.s += b.s; pieces.splice(i + 1, 1); i--; }
+  }
+  const lines = [];
+  let cur = [];
+  for (const p of pieces) {
+    const trial = [...cur, p];
+    if (cur.length && measureTokens(ctx, trial, size) > maxW) { lines.push(cur); cur = [p]; }
+    else cur = trial;
+  }
+  if (cur.length) lines.push(cur);
+  return { size, lines };
+}
+
 function drawCardOnSheet(ctx, card, x, y, set, groupNo) {
   const { CW, CH } = PRINT;
   // 切り取り線（点線）
@@ -1791,11 +1883,19 @@ function drawCardOnSheet(ctx, card, x, y, set, groupNo) {
   // 数式（収まるよう自動縮小）
   ctx.fillStyle = '#1d2a35'; ctx.strokeStyle = '#1d2a35';
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  let size = 128;
-  while (measureTokens(ctx, card.tokens, size) > CW - 130 && size > 40) size -= 6;
-  const w = measureTokens(ctx, card.tokens, size);
+  const layout = layoutCardTokens(ctx, card.tokens, CW - 130);
+  const size = layout.size;
   const hasFrac = card.tokens.some(t => t.k === 'frac');
-  drawTokens(ctx, card.tokens, x + (CW - w) / 2, y + CH / 2 + size * (hasFrac ? 0.1 : 0.34), size);
+  if (layout.lines.length === 1) {
+    const w = measureTokens(ctx, card.tokens, size);
+    drawTokens(ctx, card.tokens, x + (CW - w) / 2, y + CH / 2 + size * (hasFrac ? 0.1 : 0.34), size);
+  } else {
+    const lh = size * 1.18;
+    layout.lines.forEach((ln, li) => {
+      const w = measureTokens(ctx, ln, size);
+      drawTokens(ctx, ln, x + (CW - w) / 2, y + CH / 2 + (li - (layout.lines.length - 1) / 2) * lh + size * 0.34, size);
+    });
+  }
   // 小さなラベル（解カードなど、意味の補足）
   if (card.sub) {
     ctx.fillStyle = '#77828c';
