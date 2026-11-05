@@ -184,14 +184,16 @@
   #printArea{display:none;}
   @page{size:A4;margin:0;}
   @media print{
-    body{background:#fff !important;}
+    html,body{margin:0 !important;padding:0 !important;background:#fff !important;}
     .wrap{display:none !important;}
     #printArea{display:block;}
-    #printArea img.sheetimg{
-      width:210mm;height:297mm;display:block;
-      page-break-after:always;break-after:page;
+    /* 1シート＝1ページ。高さは用紙より少しだけ小さくし、はみ出しによる白紙ページを防ぐ */
+    #printArea .sheetpage{
+      width:210mm;height:296mm;overflow:hidden;
+      page-break-after:always;break-after:page;break-inside:avoid;
     }
-    #printArea img.sheetimg:last-child{page-break-after:auto;break-after:auto;}
+    #printArea .sheetpage:last-child{page-break-after:auto;break-after:auto;}
+    #printArea img.sheetimg{width:210mm;height:297mm;display:block;}
   }
 </style>
 </head>
@@ -1583,9 +1585,9 @@ function roundRectTop(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-/* 1セット分のシート画像（データURL）を全ページ分作る */
-function buildSheetImages(set) {
-  let cards = [];
+/* 1セット分のカード列（印刷順）を作る */
+function buildSheetCards(set) {
+  const cards = [];
   set.groups.forEach((g, gi) => {
     for (const f of set.make(g)) {
       const card = { ...f, group: gi };
@@ -1595,42 +1597,67 @@ function buildSheetImages(set) {
     }
   });
   if (set.id === 'sqrt') cards.push({ type: 'joker', tokens: set.joker.tokens, group: -1 });
+  return cards;
+}
+/* p ページ目（0始まり）のシート画像を1枚だけ作る */
+function buildSheetImageAt(set, p) {
+  const cards = buildSheetCards(set);
   const perPage = PRINT.COLS * PRINT.ROWS;
   const pages = Math.ceil(cards.length / perPage);
   const x0 = (PRINT.W - PRINT.COLS * PRINT.CW) / 2;
   const y0 = (PRINT.H - PRINT.ROWS * PRINT.CH) / 2;
+  const cv = document.createElement('canvas');
+  cv.width = PRINT.W; cv.height = PRINT.H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, PRINT.W, PRINT.H);
+  const slice = cards.slice(p * perPage, (p + 1) * perPage);
+  slice.forEach((card, i) => {
+    const cx = x0 + (i % PRINT.COLS) * PRINT.CW;
+    const cy = y0 + Math.floor(i / PRINT.COLS) * PRINT.CH;
+    drawCardOnSheet(ctx, card, cx, cy, set, card.group);
+  });
+  return { label: set.name + ' ― シート ' + (p + 1) + ' / ' + pages, dataUrl: cv.toDataURL('image/png') };
+}
+/* 1セット分のシート画像を全ページ分作る */
+function buildSheetImages(set) {
+  const pages = Math.ceil(buildSheetCards(set).length / (PRINT.COLS * PRINT.ROWS));
   const out = [];
-  for (let p = 0; p < pages; p++) {
-    const cv = document.createElement('canvas');
-    cv.width = PRINT.W; cv.height = PRINT.H;
-    const ctx = cv.getContext('2d');
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, PRINT.W, PRINT.H);
-    const slice = cards.slice(p * perPage, (p + 1) * perPage);
-    slice.forEach((card, i) => {
-      const cx = x0 + (i % PRINT.COLS) * PRINT.CW;
-      const cy = y0 + Math.floor(i / PRINT.COLS) * PRINT.CH;
-      drawCardOnSheet(ctx, card, cx, cy, set, card.group);
-    });
-    out.push({ label: set.name + ' ― シート ' + (p + 1) + ' / ' + pages, dataUrl: cv.toDataURL('image/png') });
-  }
+  for (let p = 0; p < pages; p++) out.push(buildSheetImageAt(set, p));
   return out;
 }
 
-function makePrintPages() {
+let makingSheets = false;
+async function makePrintPages() {
+  if (makingSheets) return;
+  makingSheets = true;
   const set = currentSet;
   const wrap = $('printPages');
-  wrap.innerHTML = '<p class="note">作成中…</p>';
-  const sheets = buildSheetImages(set);
-  wrap.innerHTML = '';
-  for (const sh of sheets) {
-    const label = document.createElement('p');
-    label.className = 'note';
-    label.textContent = sh.label + '（この画像を長押しして保存し、A4・実際のサイズで印刷）';
-    wrap.appendChild(label);
-    const img = document.createElement('img');
-    img.alt = label.textContent;
-    img.src = sh.dataUrl;
-    wrap.appendChild(img);
+  const btn = $('btnMakePrint');
+  if (btn) btn.disabled = true;
+  wrap.innerHTML = '<p class="note">シートを作成中…（1ページずつ作ります）</p>';
+  const status = wrap.querySelector('.note');
+  try {
+    // 1ページずつ作って、そのつど表示する（iPhoneで固まって見えないように）
+    const total = Math.ceil(buildSheetCards(set).length / (PRINT.COLS * PRINT.ROWS));
+    for (let p = 0; p < total; p++) {
+      const sh = buildSheetImageAt(set, p);
+      status.textContent = 'シートを作成中… ' + (p + 1) + ' / ' + total;
+      const label = document.createElement('p');
+      label.className = 'note';
+      label.textContent = sh.label + '（この画像を長押しして保存し、A4・実際のサイズで印刷）';
+      wrap.appendChild(label);
+      const img = document.createElement('img');
+      img.alt = label.textContent;
+      img.src = sh.dataUrl;
+      wrap.appendChild(img);
+      await wait(60);
+    }
+    status.textContent = set.name + ' のシートができました（全' + total + 'ページ）。';
+  } catch (e) {
+    status.textContent = 'シートを作成できませんでした。もう一度お試しください。（' + (e && e.message ? e.message : e) + '）';
+  } finally {
+    if (btn) btn.disabled = false;
+    makingSheets = false;
   }
 }
 
@@ -1643,11 +1670,14 @@ async function printSets(sets) {
   for (const set of sets) {
     const sheets = buildSheetImages(set);
     for (const sh of sheets) {
+      const pageDiv = document.createElement('div');
+      pageDiv.className = 'sheetpage';
       const img = document.createElement('img');
       img.className = 'sheetimg';
       img.src = sh.dataUrl;
       img.alt = sh.label;
-      area.appendChild(img);
+      pageDiv.appendChild(img);
+      area.appendChild(pageDiv);
       total++;
     }
     if (prog) prog.textContent = '印刷用シートを作成中… ' + total + ' ページ';
