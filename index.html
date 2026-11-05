@@ -112,6 +112,10 @@
     font-family:"Hiragino Mincho ProN","YuMincho","Noto Serif JP","Times New Roman",serif;
     font-size:1.12rem;line-height:1.25;padding:2px 3px;color:#1d2a35;overflow:hidden;
   }
+  .pcard .front .sublabel{
+    font-size:.56rem;color:#77828c;text-align:center;padding:0 2px 3px;line-height:1.2;
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif;
+  }
   .pcard.collected{cursor:default;}
   .pcard.collected .front{box-shadow:0 0 0 3px #f4c542,0 0 14px #f4c542;}
   .pcard.found .front{box-shadow:0 0 0 3px #58b368,0 0 12px #58b368;}
@@ -232,6 +236,7 @@
     <div class="panel">
       <h2 id="tableTitle">値の一覧表</h2>
       <p class="note">同じ行の4枚が、1組のカードです。はじめのうちは、この表を見ながら遊んで大丈夫。慣れてきたら、表なしで瞬間的に反応できるようになるのが目標です。</p>
+      <p class="note hidden" id="setNote"></p>
       <div style="overflow-x:auto;"><table class="ref" id="refTable"></table></div>
       <div class="subrow"><button class="subbtn" id="btnTableBack">← もどる</button></div>
     </div>
@@ -257,6 +262,7 @@
       <ul>
         <li><b>神経衰弱</b>：カードを1枚ずつめくり、最初にめくったカードと<b>同じ組</b>のカードを続けてめくれたら、そのまま続けられます。4枚そろうと1組ゲット。違う組をめくったら、その回にめくったカードは全部戻り、手番が終わります。組数は かんたん（6組）／ふつう（10組）／むずかしい（全組）から選べます。</li>
         <li><b>ババぬき</b>：手札から4枚1組がそろったら捨てられます。次の人のカードを1枚引いて、手札を空にした人から上がり。平方根セットでは「√0」がジョーカー（ババ）。ほかのセットでは、どれか1組のカードを1枚だけ残して抜いてある「ジジぬき」方式で、残った1枚が最後まで残ります。</li>
+        <li><b>カードの小さな字</b>：因数分解セットの「解」は、展開形の式を 0 とおいた方程式（式＝0）の解です。カードにも「式＝0 の解」と小さく書いてあります。一次方程式セットの「解」は方程式の解、「検算式」は解を方程式に代入した計算で、こちらもカードに小さく書いてあります。</li>
         <li><b>フラッシュ練習</b>：見本のカードと同じ組のカードを3枚、候補の中からすばやくタップ。まちがえると＋2秒のペナルティ。5ラウンドの合計タイムを競います。</li>
       </ul>
       <h2>このアプリの生まれ</h2>
@@ -486,6 +492,8 @@ const SETS = [
   {
     id: 'eq', name: '一次方程式セット', grade: '中1', short: '一次方程式',
     types: ['方程式', '移項した式', '解', '検算式'],
+    subs: { 2: '方程式の解', 3: '解を代入して検算' },
+    note: '「解」は方程式の解、「検算式」は解を方程式に代入した計算です。',
     make: eqCards,
     groups: [
       { a: 2, b: 3, c: 9 }, { a: 3, b: -4, c: 14 }, { a: 5, b: 2, c: 27 },
@@ -508,6 +516,8 @@ const SETS = [
   {
     id: 'factor', name: '因数分解セット', grade: '中3', short: '因数分解',
     types: ['展開形', '因数分解形', '解', 'x＝10 の値'],
+    subs: { 2: '式＝0 の解' },
+    note: '「解」のカードは、展開形の式を 0 とおいた方程式（式＝0）の解です。',
     make: factorCards,
     groups: [
       { r: [-1, -2] }, { r: [-1, -3] }, { r: [-2, -3] }, { r: [-1, -4] },
@@ -543,13 +553,21 @@ function groupValueKey(set, g) {
   }
 }
 
+/* カードの種類を示す小さなラベル（カードだけでは意味が自明でない表現に付ける） */
+function cardSub(set, type) { return set.subs ? set.subs[type] : undefined; }
+
 /* セットの全カード（組×4表現）を平らな配列で返す */
 function buildDeck(set, groupIndexes) {
   const idxs = groupIndexes || set.groups.map((_, i) => i);
   const cards = [];
   for (const gi of idxs) {
     const forms = set.make(set.groups[gi]);
-    for (const f of forms) cards.push({ setId: set.id, group: gi, type: f.type, tokens: f.tokens });
+    for (const f of forms) {
+      const card = { setId: set.id, group: gi, type: f.type, tokens: f.tokens };
+      const sub = cardSub(set, f.type);
+      if (sub) card.sub = sub;
+      cards.push(card);
+    }
   }
   return cards;
 }
@@ -737,6 +755,7 @@ function makeCardEl(card, opts) {
     '<span class="face front" style="border-color:' + color + '">' +
     '<span class="band" style="background:' + color + '">' + esc(band) + '</span>' +
     '<span class="math">' + tokensToHTML(card.tokens) + '</span>' +
+    (card.sub ? '<span class="sublabel">' + esc(card.sub) + '</span>' : '') +
     '</span></span>';
   btn._card = card;
   return btn;
@@ -770,6 +789,11 @@ function renderSetGrid() {
 /* ---------- 一覧表 ---------- */
 function renderTable() {
   $('tableTitle').textContent = '値の一覧表 ― ' + currentSet.name;
+  const noteEl = $('setNote');
+  if (noteEl) {
+    if (currentSet.note) { noteEl.textContent = '※ ' + currentSet.note; noteEl.classList.remove('hidden'); }
+    else noteEl.classList.add('hidden');
+  }
   const tbl = $('refTable');
   let html = '<tr>' + currentSet.types.map((t, i) => '<th style="background:' + TYPE_COLORS[i] + '">' + esc(t) + '</th>').join('') + '</tr>';
   currentSet.groups.forEach((g, gi) => {
@@ -1508,6 +1532,13 @@ function drawCardOnSheet(ctx, card, x, y, set, groupNo) {
   const w = measureTokens(ctx, card.tokens, size);
   const hasFrac = card.tokens.some(t => t.k === 'frac');
   drawTokens(ctx, card.tokens, x + (CW - w) / 2, y + CH / 2 + size * (hasFrac ? 0.1 : 0.34), size);
+  // 小さなラベル（解カードなど、意味の補足）
+  if (card.sub) {
+    ctx.fillStyle = '#77828c';
+    ctx.font = '38px "Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(card.sub, x + CW / 2, y + CH - 108);
+  }
   // 下部：セット名と組番号（先生の仕分け用）
   ctx.fillStyle = '#8a8a7a';
   ctx.font = '34px "Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif';
@@ -1536,7 +1567,12 @@ function makePrintPages() {
   wrap.innerHTML = '<p class="note">作成中…</p>';
   let cards = [];
   set.groups.forEach((g, gi) => {
-    for (const f of set.make(g)) cards.push({ ...f, group: gi });
+    for (const f of set.make(g)) {
+      const card = { ...f, group: gi };
+      const sub = cardSub(set, f.type);
+      if (sub) card.sub = sub;
+      cards.push(card);
+    }
   });
   if (set.id === 'sqrt') cards.push({ type: 'joker', tokens: set.joker.tokens, group: -1 });
   const perPage = PRINT.COLS * PRINT.ROWS;
