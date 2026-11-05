@@ -162,7 +162,15 @@
   /* 教科書表記 */
   .var{font-style:italic;font-family:"Times New Roman","Hiragino Mincho ProN","YuMincho","Noto Serif JP",serif;}
   .rad{white-space:nowrap;}
-  .rad-body{border-top:.09em solid currentColor;padding:0 .07em 0 .02em;}
+  .rad-root{display:inline-block;}
+  /* 指数を含む根号は、√の字形を縦に伸ばして上線に届かせる（活字の根号が背高になるのと同じ考え方） */
+  .rad-tall .rad-root{transform:scaleY(1.55);transform-origin:50% 88%;}
+  /* 上線は√の上腕に重なる位置から引く（背景グラデーションで線だけを字形の高さに合わせる） */
+  .rad-body{
+    background-image:linear-gradient(currentColor,currentColor);
+    background-size:100% .085em;background-repeat:no-repeat;background-position:0 .145em;
+    margin-left:-.26em;padding:0 .05em 0 .26em;
+  }
   .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 .08em;}
   .frac-n{border-bottom:.09em solid currentColor;padding:0 .28em;line-height:1.18;}
   .frac-d{padding:0 .28em;line-height:1.18;}
@@ -880,7 +888,7 @@ function tokensToHTML(tokens) {
     switch (tok.k) {
       case 't': return esc(tok.s);
       case 'v': return '<i class="var">' + esc(tok.s) + '</i>';
-      case 'rad': return '<span class="rad">√<span class="rad-body">' + tokensToHTML(tok.body) + '</span></span>';
+      case 'rad': return '<span class="rad' + (tokensHaveSup(tok.body) ? ' rad-tall' : '') + '"><span class="rad-root">√</span><span class="rad-body">' + tokensToHTML(tok.body) + '</span></span>';
       case 'frac': return '<span class="frac"><span class="frac-n">' + tokensToHTML(tok.n) + '</span><span class="frac-d">' + tokensToHTML(tok.d) + '</span></span>';
       case 'sup': return tokensToHTML(tok.b) + '<sup>' + esc(tok.e) + '</sup>';
       case 'table': {
@@ -1656,7 +1664,7 @@ function measureTokens(ctx, tokens, size) {
       case 'v': ctx.font = serifVarFont(size); w += ctx.measureText(tok.s).width; break;
       case 'rad': {
         ctx.font = serifFont(size);
-        w += ctx.measureText('√').width + measureTokens(ctx, tok.body, size) + size * 0.08;
+        w += size * 0.62 + measureTokens(ctx, tok.body, size) + size * 0.08;
         break;
       }
       case 'frac': {
@@ -1697,19 +1705,22 @@ function drawTokens(ctx, tokens, x, yBase, size) {
       case 't': ctx.font = serifFont(size); ctx.fillText(tok.s, cx, yBase); cx += ctx.measureText(tok.s).width; break;
       case 'v': ctx.font = serifVarFont(size); ctx.fillText(tok.s, cx, yBase); cx += ctx.measureText(tok.s).width; break;
       case 'rad': {
-        ctx.font = serifFont(size);
-        const rw = ctx.measureText('√').width;
-        ctx.fillText('√', cx, yBase);
+        // √と上線を1本のパスで描く（radix の r が変形した本来のつながった字形にする）。
+        // 指数を含む場合は根号全体が背高になり、上線は指数の上を覆う。
+        const radW = size * 0.56;
         const bodyW = measureTokens(ctx, tok.body, size);
-        drawTokens(ctx, tok.body, cx + rw, yBase, size);
+        const topY = yBase - size * (tokensHaveSup(tok.body) ? 1.24 : 0.84);
         ctx.beginPath();
         ctx.lineWidth = Math.max(2, size * 0.055);
-        // 指数（上付き）を含む根号は、上線を指数の上まで持ち上げる
-        const ly = yBase - size * (tokensHaveSup(tok.body) ? 1.24 : 0.82);
-        ctx.moveTo(cx + rw * 0.82, ly);
-        ctx.lineTo(cx + rw + bodyW + size * 0.08, ly);
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.moveTo(cx + radW * 0.04, yBase - size * 0.32);
+        ctx.lineTo(cx + radW * 0.36, yBase - size * 0.03);
+        ctx.lineTo(cx + radW * 0.97, topY);
+        ctx.lineTo(cx + radW + size * 0.06 + bodyW + size * 0.08, topY);
         ctx.stroke();
-        cx += rw + bodyW + size * 0.08;
+        drawTokens(ctx, tok.body, cx + radW + size * 0.06, yBase, size);
+        cx += radW + size * 0.06 + bodyW + size * 0.08;
         break;
       }
       case 'frac': {
