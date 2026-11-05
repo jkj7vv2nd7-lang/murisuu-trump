@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>選べる数学カード「無理数トランプ」</title>
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  :root{
+    --ink:#22303c; --paper:#f7f3ea; --card:#fffdf7; --accent:#b8860b;
+    --c0:#cf3f38; --c1:#2470a0; --c2:#1e8449; --c3:#7d3c98;
+    --shadow:0 2px 6px rgba(30,40,50,.18);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    background:linear-gradient(160deg,#20303e,#2e4a3f 70%,#37543f);
+    color:var(--ink); min-height:100vh;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:14px 12px 40px;}
+  header.top{
+    color:#fdf6dd;text-align:center;padding:10px 4px 2px;
+  }
+  header.top h1{font-size:1.42rem;margin:.2em 0 .1em;letter-spacing:.02em;}
+  header.top h1 .sub{display:block;font-size:.78rem;font-weight:normal;opacity:.85;margin-top:.35em;}
+  .panel{
+    background:var(--paper);border-radius:14px;padding:14px 14px 16px;margin-top:12px;
+    box-shadow:var(--shadow);
+  }
+  .panel h2{font-size:1.02rem;margin:.1em 0 .55em;border-left:5px solid var(--accent);padding-left:.5em;}
+  .panel h3{font-size:.95rem;margin:.8em 0 .4em;}
+  .setgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  button{font-family:inherit;cursor:pointer;}
+  .setbtn{
+    border:2px solid #cbbd93;background:#fffdf4;border-radius:10px;padding:9px 10px;text-align:left;
+    font-size:.95rem;color:var(--ink);
+  }
+  .setbtn small{display:block;color:#667;font-size:.74rem;margin-top:2px;}
+  .setbtn.sel{border-color:var(--accent);background:#fdf3d0;box-shadow:0 0 0 2px #e8d189 inset;}
+  .modegrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .modebtn{
+    border:none;border-radius:10px;padding:12px 8px;font-size:1rem;font-weight:bold;color:#fff;
+    background:#46618c;box-shadow:var(--shadow);
+  }
+  .modebtn small{display:block;font-weight:normal;font-size:.72rem;opacity:.9;margin-top:3px;}
+  .modebtn.green{background:#2e7d5b;} .modebtn.plum{background:#7d4a6e;} .modebtn.rust{background:#a0522d;}
+  .subrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .subbtn{
+    border:2px solid #9db2a4;background:#fff;border-radius:999px;padding:7px 14px;font-size:.88rem;color:var(--ink);
+  }
+  .records{font-size:.86rem;line-height:1.75;color:#33424f;}
+  .records b{color:#7a5b00;}
+  .hidden{display:none !important;}
+
+  /* ---------- ゲーム画面 ---------- */
+  .gamebar{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:#fdf6dd;margin-top:6px;
+  }
+  .gamebar .ttl{font-weight:bold;font-size:1.02rem;}
+  .chip{
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;
+    border-radius:999px;padding:3px 10px;font-size:.8rem;
+  }
+  .chip b{font-size:.95rem;}
+  .gbtn{
+    border:none;border-radius:999px;padding:7px 14px;font-size:.85rem;background:#e9dfc2;color:#333;font-weight:bold;
+  }
+  .gbtn.ghost{background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;}
+  .msg{
+    margin-top:10px;background:rgba(0,0,0,.28);color:#ffeeb0;border-radius:10px;
+    padding:9px 12px;font-size:.94rem;min-height:2.5em;display:flex;align-items:center;
+  }
+  .board{margin-top:12px;}
+
+  /* ---------- カード ---------- */
+  .grid{display:grid;gap:8px;}
+  .pcard{
+    position:relative;border:none;background:transparent;padding:0;aspect-ratio:7/9;width:100%;
+    perspective:600px;cursor:pointer;
+  }
+  .pcard .inner{
+    position:absolute;inset:0;transform-style:preserve-3d;transition:transform .38s cubic-bezier(.3,.7,.4,1.2);
+  }
+  .pcard.up .inner{transform:rotateY(180deg);}
+  .pcard .face{
+    position:absolute;inset:0;border-radius:9px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow);
+  }
+  .pcard .back{
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255,255,255,.16) 0 12%, transparent 13%),
+      repeating-linear-gradient(45deg,#274b73 0 10px,#2f5987 10px 20px);
+    border:2px solid #d9c98f;align-items:center;justify-content:center;
+  }
+  .pcard .back .blogo{
+    color:#f3e5bb;font-family:"Hiragino Mincho ProN","YuMincho",serif;font-size:1.5rem;
+    border:2px solid rgba(243,229,187,.7);border-radius:50%;width:2.1em;height:2.1em;
+    display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.18);
+  }
+  .pcard .front{
+    background:var(--card);transform:rotateY(180deg);border:2.5px solid #999;
+    padding:0;
+  }
+  .pcard .front .band{
+    color:#fff;font-size:.6rem;font-weight:bold;text-align:center;padding:2.5px 2px;letter-spacing:.03em;
+    white-space:nowrap;overflow:hidden;
+  }
+  .pcard .front .math{
+    flex:1;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-family:"Hiragino Mincho ProN","YuMincho","Noto Serif JP","Times New Roman",serif;
+    font-size:1.12rem;line-height:1.25;padding:2px 3px;color:#1d2a35;overflow:hidden;
+  }
+  .pcard.collected{cursor:default;}
+  .pcard.collected .front{box-shadow:0 0 0 3px #f4c542,0 0 14px #f4c542;}
+  .pcard.found .front{box-shadow:0 0 0 3px #58b368,0 0 12px #58b368;}
+  .pcard.wrong{animation:shake .35s;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  .pcard.pop .inner{animation:pop .45s;}
+  @keyframes pop{40%{transform:scale(1.07) rotateY(180deg);}}
+  .pcard:disabled{cursor:default;}
+
+  /* 教科書表記 */
+  .var{font-style:italic;}
+  .rad{white-space:nowrap;}
+  .rad-body{border-top:.09em solid currentColor;padding:0 .07em 0 .02em;}
+  .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 .08em;}
+  .frac-n{border-bottom:.09em solid currentColor;padding:0 .28em;line-height:1.18;}
+  .frac-d{padding:0 .28em;line-height:1.18;}
+  sup{font-size:.62em;}
+  .minitable{border-collapse:collapse;font-size:.6em;line-height:1.2;}
+  .minitable th,.minitable td{border:1px solid #8a97a5;padding:1px 4px;text-align:center;font-family:inherit;background:#fff;}
+  .minitable th{color:#42525f;font-weight:normal;}
+  .graphsvg{width:4.3em;height:4.3em;display:block;}
+
+  /* ---------- ババぬき ---------- */
+  .cpuarea{display:flex;gap:8px;margin-top:10px;}
+  .cpu{
+    flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);
+    border-radius:10px;padding:7px 8px;color:#fff;text-align:center;
+  }
+  .cpu .nm{font-size:.82rem;font-weight:bold;}
+  .cpu .ct{font-size:.75rem;opacity:.9;}
+  .cpu.done{opacity:.45;}
+  .cpu.turn{box-shadow:0 0 0 2px #f4c542;}
+  .minibacks{display:flex;justify-content:center;gap:2px;margin-top:5px;flex-wrap:wrap;}
+  .miniback{
+    width:15px;height:21px;border-radius:3px;border:1.5px solid #d9c98f;
+    background:repeating-linear-gradient(45deg,#274b73 0 4px,#2f5987 4px 8px);padding:0;
+  }
+  button.miniback.pickable{cursor:pointer;width:22px;height:31px;animation:bob 1s infinite alternate;}
+  @keyframes bob{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+  .hand{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .hand .pcard{width:64px;flex:none;}
+  .handlabel{color:#fdf6dd;font-size:.85rem;margin-top:12px;font-weight:bold;}
+
+  /* ---------- フラッシュ ---------- */
+  .targetrow{display:flex;gap:12px;align-items:center;}
+  .targetrow .pcard{width:92px;flex:none;cursor:default;}
+  .targetinfo{color:#fdf6dd;font-size:.92rem;line-height:1.6;}
+  .flashgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;}
+
+  /* ---------- 一覧表・印刷・説明 ---------- */
+  table.ref{border-collapse:collapse;width:100%;font-size:.9rem;}
+  table.ref th,table.ref td{border:1px solid #c9bd97;padding:6px 7px;text-align:center;background:#fff;}
+  table.ref th{color:#fff;font-size:.76rem;}
+  table.ref td{font-family:"Hiragino Mincho ProN","YuMincho","Noto Serif JP",serif;font-size:1rem;}
+  .printpages img{width:100%;border:1px solid #bbb;border-radius:6px;margin-top:10px;background:#fff;}
+  .note{font-size:.84rem;color:#55606a;line-height:1.7;}
+  .about p,.about li{font-size:.9rem;line-height:1.8;}
+  .about ul{padding-left:1.2em;}
+  .big{font-size:1.25rem;font-weight:bold;}
+  .result{
+    text-align:center;padding:14px 6px;font-size:1.05rem;line-height:1.9;
+  }
+  .kbd-hint{font-size:.8rem;color:#667;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>選べる数学カード<span style="color:#f4c542">「無理数トランプ」</span>
+      <span class="sub">同じ数の「ちがう表し方」をそろえるカードゲーム ― 6つの単元から選べます</span>
+    </h1>
+  </header>
+
+  <!-- ホーム -->
+  <section id="screen-home">
+    <div class="panel">
+      <h2>1. セットを選ぶ</h2>
+      <div class="setgrid" id="setGrid"></div>
+      <h2 style="margin-top:16px;">2. あそび方を選ぶ</h2>
+      <div class="modegrid">
+        <button class="modebtn" id="btnMemorySolo">神経衰弱<small>1人で練習 ― 手数と時間を競う</small></button>
+        <button class="modebtn green" id="btnMemoryCpu">神経衰弱・対戦<small>コンピュータと交互にめくる</small></button>
+        <button class="modebtn plum" id="btnBaba">ババぬき<small>あなた＋コンピュータ3人</small></button>
+        <button class="modebtn rust" id="btnFlash">フラッシュ練習<small>同じ組のカードをすばやくタップ</small></button>
+      </div>
+      <div class="subrow">
+        <button class="subbtn" id="btnTable">📖 値の一覧表</button>
+        <button class="subbtn" id="btnPrint">🖨 印刷用カード</button>
+        <button class="subbtn" id="btnAbout">❓ あそび方・コラム</button>
+        <button class="subbtn" id="btnSound">🔊 音：オン</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>ベスト記録</h2>
+      <div class="records" id="recordsBox">まだ記録がありません。遊ぶと、ここに残ります。</div>
+    </div>
+  </section>
+
+  <!-- ゲーム -->
+  <section id="screen-game" class="hidden">
+    <div class="gamebar">
+      <span class="ttl" id="gameTitle"></span>
+      <span class="chip">手数 <b id="chipTurns">0</b></span>
+      <span class="chip">時間 <b id="chipTime">0:00</b></span>
+      <span class="chip" id="chipScoreWrap">そろえた組 <b id="chipScore">0</b></span>
+      <span style="flex:1"></span>
+      <button class="gbtn" id="btnPeek">📖 一覧表</button>
+      <button class="gbtn ghost" id="btnQuit">やめる</button>
+    </div>
+    <div class="msg" id="gameMsg"></div>
+    <div id="cpuArea" class="cpuarea hidden"></div>
+    <div class="board" id="board"></div>
+    <div id="handArea"></div>
+  </section>
+
+  <!-- 一覧表 -->
+  <section id="screen-table" class="hidden">
+    <div class="panel">
+      <h2 id="tableTitle">値の一覧表</h2>
+      <p class="note">同じ行の4枚が、1組のカードです。はじめのうちは、この表を見ながら遊んで大丈夫。慣れてきたら、表なしで瞬間的に反応できるようになるのが目標です。</p>
+      <div style="overflow-x:auto;"><table class="ref" id="refTable"></table></div>
+      <div class="subrow"><button class="subbtn" id="btnTableBack">← もどる</button></div>
+    </div>
+  </section>
+
+  <!-- 印刷 -->
+  <section id="screen-print" class="hidden">
+    <div class="panel">
+      <h2>印刷用カードシート（A4）</h2>
+      <p class="note">選んでいるセットの全カードを、A4判の画像（300dpi）で書き出します。カードの大きさは、実践で使われた厚紙カードと同じ <b>縦9cm×横7cm</b>。点線に沿って切り取ってください。画像を長押しすると写真に保存できます。印刷は「実際のサイズ（100%）」でどうぞ。</p>
+      <div class="subrow">
+        <button class="subbtn" id="btnMakePrint">🖨 このセットのシートを作る</button>
+        <button class="subbtn" id="btnPrintBack">← もどる</button>
+      </div>
+      <div class="printpages" id="printPages"></div>
+    </div>
+  </section>
+
+  <!-- あそび方・コラム -->
+  <section id="screen-about" class="hidden">
+    <div class="panel about">
+      <h2>あそび方</h2>
+      <ul>
+        <li><b>神経衰弱</b>：カードを1枚ずつめくり、最初にめくったカードと<b>同じ組</b>のカードを続けてめくれたら、そのまま続けられます。4枚そろうと1組ゲット。違う組をめくったら、その回にめくったカードは全部戻り、手番が終わります。組数は かんたん（6組）／ふつう（10組）／むずかしい（全組）から選べます。</li>
+        <li><b>ババぬき</b>：手札から4枚1組がそろったら捨てられます。次の人のカードを1枚引いて、手札を空にした人から上がり。平方根セットでは「√0」がジョーカー（ババ）。ほかのセットでは、どれか1組のカードを1枚だけ残して抜いてある「ジジぬき」方式で、残った1枚が最後まで残ります。</li>
+        <li><b>フラッシュ練習</b>：見本のカードと同じ組のカードを3枚、候補の中からすばやくタップ。まちがえると＋2秒のペナルティ。5ラウンドの合計タイムを競います。</li>
+      </ul>
+      <h2>このアプリの生まれ</h2>
+      <p>もとになったのは、『数学のとびら』（日本書籍、1984年）に紹介された「無理数トランプ」です。清水正典先生が新卒の頃、先輩の先生から教わり、班ごとにカードを作らせて、遊びながら平方根（√）の計算を定着させた実践が、このアプリの起点になっています（当時の記録は、先生のブログ「トランプゲームで平方根のトレーニング」2005年、「平方根トランプでルート計算のトレーニング」2007年に残っています）。</p>
+      <ul>
+        <li><b>4つの表現＝4色</b>：等しい値になる4枚は、表現ごとに色を分ける方が分かりやすい、というのが当時からの工夫です。このアプリでも、4つの表現は色で区別しています。</li>
+        <li><b>一覧表の足場かけ</b>：初期は値の一覧表を配って参照しながら遊び、慣れたら表なしで瞬間的に反応できる訓練へ――という段階づけも、当時の実践そのままです。</li>
+        <li><b>カードの大きさ</b>：印刷用カードは、当時生徒が作った厚紙カードと同じ、縦9cm×横7cmです。</li>
+        <li><b>セットの広がり</b>：「同じ対象の違う表し方をそろえる」仕組みは、割合・累乗・一次方程式・因数分解・一次関数にも広げられるはず、という発想で、6セットを用意しました。一次関数セットの4表現（式・表・グラフ・言葉）は、啓林館の授業実践記録にある「1次関数トランプ」の構成を踏まえたもので、表の数値もグラフも、すべて式から計算・描画しています。カードの数値例はこのアプリのために新たに作り、全ての組について「4つの表現が本当に等しいこと」「ほかの組と取り違えないこと」を、プログラムで機械的に検算しています。</li>
+      </ul>
+      <div class="subrow"><button class="subbtn" id="btnAboutBack">← もどる</button></div>
+    </div>
+  </section>
+</div>
+<script>'use strict';
+/* 選べる数学カード「無理数トランプ」データ
+   1組＝同じ対象の4つの表現。表現ごとに色を分ける（4表現＝4色）。
+   カードは {set, group, type, tokens} で表す。tokens は画面表示（DOM）と
+   印刷（Canvas）の両方で使う描画トークン列。
+   トークン: {k:'t',s} 文字列 / {k:'v',s} 変数（セリフ・イタリック）
+             {k:'rad',body:[...]} 根号（横線つき）
+             {k:'frac',n:[...],d:[...]} 分数（横線つき）
+             {k:'sup',b:[...],e:'2'} 上付き指数
+*/
+const T = s => ({ k: 't', s: String(s) });
+const V = s => ({ k: 'v', s: String(s) });
+const RAD = body => ({ k: 'rad', body });
+const FRAC = (n, d) => ({ k: 'frac', n, d });
+const SUP = (b, e) => ({ k: 'sup', b, e: String(e) });
+
+const TABLE = (xs, ys) => ({ k: 'table', xs, ys });
+const GRAPH = (aN, aD, b) => ({ k: 'graph', aN, aD, b });
+
+const TYPE_COLORS = ['#cf3f38', '#2470a0', '#1e8449', '#7d3c98'];
+const TYPE_NAMES_ALL = ['表現 1', '表現 2', '表現 3', '表現 4'];
+
+/* ---------- 平方根セット：組は {a, b}（値 = a√b） ---------- */
+function sqrtCards(g) {
+  const { a, b } = g;
+  const n = a * a * b;
+  let f1, f3, f4;
+  if (b === 1) {
+    f1 = [T(a)];
+    f3 = [RAD([SUP([T(a)], 2)])];
+    f4 = [RAD([T(a)]), T('×'), RAD([T(a)])];
+  } else {
+    f1 = [T(a), RAD([T(b)])];
+    f3 = [RAD([SUP([T(a)], 2), T('×'), T(b)])];
+    f4 = [RAD([T(a * a)]), T('×'), RAD([T(b)])];
+  }
+  return [
+    { type: 0, tokens: f1 },
+    { type: 1, tokens: [RAD([T(n)])] },
+    { type: 2, tokens: f3 },
+    { type: 3, tokens: f4 },
+  ];
+}
+
+/* ---------- 割合セット：組は {n, d}（既約分数 n/d） ---------- */
+function decStr(n, d) {
+  // 終端する小数のみ（分母は 2,4,5,10,20,25）
+  let s = (n / d).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+  return s;
+}
+function buaiStr(n, d) {
+  const v = n / d;
+  const wari = Math.floor(v * 10 + 1e-9);
+  const bu = Math.round((v * 10 - wari) * 10);
+  let s = '';
+  if (wari > 0) s += wari + '割';
+  if (bu > 0) s += bu + '分';
+  return s || '0割';
+}
+function ratioCards(g) {
+  const { n, d } = g;
+  const pct = Math.round((n / d) * 100);
+  return [
+    { type: 0, tokens: [FRAC([T(n)], [T(d)])] },
+    { type: 1, tokens: [T(decStr(n, d))] },
+    { type: 2, tokens: [T(pct), T('%')] },
+    { type: 3, tokens: [T(buaiStr(n, d))] },
+  ];
+}
+
+/* ---------- 累乗セット：組は {v, A:[底,指数], B:[底,指数], mul:[因子...] | rep:[底,回数]} ---------- */
+function powerCards(g) {
+  let f4;
+  if (g.mul) f4 = g.mul.map((x, i) => (i === 0 ? T(x) : T(x))).reduce((acc, t, i) => (i === 0 ? [t] : [...acc, T('×'), t]), []);
+  else f4 = [T(g.rep[0] + 'を' + g.rep[1] + '回かけたもの')];
+  return [
+    { type: 0, tokens: [T(g.v)] },
+    { type: 1, tokens: [SUP([T(g.A[0])], g.A[1])] },
+    { type: 2, tokens: [SUP([T(g.B[0])], g.B[1])] },
+    { type: 3, tokens: f4 },
+  ];
+}
+
+/* ---------- 一次方程式セット：組は {a, b, c}（ax＋b＝c、b は符号つき） ---------- */
+function signToks(coef, bodyIfOne) {
+  // +3 / −3 の形（符号と絶対値）
+  return coef >= 0 ? [T('+'), T(coef)] : [T('−'), T(-coef)];
+}
+function eqCards(g) {
+  if (g.custom) return g.custom;
+  const { a, b, c } = g;
+  const sol = (c - b) / a;
+  const f1 = [T(a), V('x'), ...signToks(b), T('='), T(c)];
+  const f2 = [T(a), V('x'), T('='), T(c - b)];
+  const f3 = [V('x'), T('='), T(sol)];
+  const solTok = sol < 0 ? [T('('), T(sol), T(')')] : [T(sol)];
+  const f4 = [T(a), T('×'), ...solTok, ...signToks(b), T('='), T(c)];
+  return [
+    { type: 0, tokens: f1 },
+    { type: 1, tokens: f2 },
+    { type: 2, tokens: f3 },
+    { type: 3, tokens: f4 },
+  ];
+}
+
+/* ---------- 因数分解セット：組は {r:[根1, 根2]}（因子の順） ---------- */
+function factorCards(g) {
+  const [r1, r2] = g.r;
+  const p = -(r1 + r2), q = r1 * r2;
+  // 展開形 x²＋px＋q
+  const f1 = [SUP([V('x')], 2)];
+  if (p !== 0) { f1.push(...(p > 0 ? [T('+')] : [T('−')])); if (Math.abs(p) !== 1) f1.push(T(Math.abs(p))); f1.push(V('x')); }
+  if (q !== 0) f1.push(...(q > 0 ? [T('+'), T(q)] : [T('−'), T(-q)]));
+  // 因数分解形
+  const fac = r => (r <= 0 ? [T('('), V('x'), T('+'), T(-r), T(')')] : [T('('), V('x'), T('−'), T(r), T(')')]);
+  const f2 = r1 === r2 ? [SUP(fac(r1), 2)] : [...fac(r1), ...fac(r2)];
+  // 解
+  const f3 = r1 === r2
+    ? [V('x'), T('='), T(r1), T('（重解）')]
+    : [V('x'), T('='), T(r1), T(','), T(' '), T(r2)];
+  // x＝10 のときの値
+  const val = (10 - r1) * (10 - r2);
+  return [
+    { type: 0, tokens: f1 },
+    { type: 1, tokens: f2 },
+    { type: 2, tokens: f3 },
+    { type: 3, tokens: [T('x'), T('='), T('10'), T(' のとき '), T(val)] },
+  ];
+}
+
+
+/* ---------- 一次関数セット：組は {aN, aD, b}（y = (aN/aD)x + b、aD>0） ---------- */
+function gcd2(x, y) { x = Math.abs(x); y = Math.abs(y); while (y) { [x, y] = [y, x % y]; } return x || 1; }
+function fmtN(n) { return String(n).replace('-', '−'); }
+// 有理数 num/den（den>0）をトークン列に（整数なら整数、分数なら帯なしの分数表記）
+function ratToks(num, den) {
+  const g = gcd2(num, den); num /= g; den /= g;
+  if (den === 1) return [T(fmtN(num))];
+  if (num < 0) return [T('−'), FRAC([T(-num)], [T(den)])];
+  return [FRAC([T(num)], [T(den)])];
+}
+function funcCards(g) {
+  const { aN, aD, b } = g;
+  // 式 y＝ax＋b
+  const f1 = [V('y'), T('=')];
+  if (aN === aD) { /* a=1：係数を省略 */ }
+  else if (aN === -aD) f1.push(T('−'));
+  else f1.push(...ratToks(aN, aD));
+  f1.push(V('x'));
+  if (b > 0) f1.push(T('+'), T(b)); else if (b < 0) f1.push(T('−'), T(-b));
+  // 表（x = −1, 0, 1, 2 のときの y を式から算出）
+  const xs = [-1, 0, 1, 2];
+  const xCells = xs.map(x => [T(fmtN(x))]);
+  const yCells = xs.map(x => ratToks(aN * x + b * aD, aD));
+  const f2 = [TABLE(xCells, yCells)];
+  // グラフ（式と同一パラメータで描画）
+  const f3 = [GRAPH(aN, aD, b)];
+  // 言葉
+  const f4 = [T('傾き'), ...ratToks(aN, aD), T('、切片'), T(fmtN(b))];
+  return [
+    { type: 0, tokens: f1 },
+    { type: 1, tokens: f2 },
+    { type: 2, tokens: f3 },
+    { type: 3, tokens: f4 },
+  ];
+}
+
+const SETS = [
+  {
+    id: 'sqrt', name: '平方根セット', grade: '中3', short: '平方根',
+    types: ['簡単な形', '√n の形', '√(a²×b) の形', '√どうしの積'],
+    make: sqrtCards, joker: { label: '√0', tokens: [RAD([T(0)])], note: 'ジョーカー' },
+    groups: [
+      { a: 1, b: 1 }, { a: 2, b: 1 }, { a: 2, b: 2 }, { a: 3, b: 1 }, { a: 2, b: 3 },
+      { a: 4, b: 1 }, { a: 3, b: 2 }, { a: 2, b: 5 }, { a: 5, b: 1 }, { a: 3, b: 3 },
+      { a: 4, b: 2 }, { a: 3, b: 5 }, { a: 4, b: 3 }, { a: 5, b: 2 }, { a: 5, b: 3 },
+    ],
+  },
+  {
+    id: 'ratio', name: '割合セット', grade: '中1', short: '割合',
+    types: ['分数', '小数', '百分率', '歩合'],
+    make: ratioCards,
+    groups: [
+      { n: 1, d: 2 }, { n: 1, d: 4 }, { n: 3, d: 4 }, { n: 1, d: 5 },
+      { n: 2, d: 5 }, { n: 3, d: 5 }, { n: 4, d: 5 }, { n: 1, d: 10 },
+      { n: 3, d: 10 }, { n: 7, d: 10 }, { n: 9, d: 10 }, { n: 1, d: 20 },
+      { n: 3, d: 20 }, { n: 7, d: 20 }, { n: 9, d: 20 }, { n: 1, d: 25 },
+    ],
+  },
+  {
+    id: 'power', name: '累乗セット', grade: '中1〜中3', short: '累乗',
+    types: ['数', '累乗の形 A', '累乗の形 B', 'かけ算の形'],
+    make: powerCards,
+    groups: [
+      { v: 16, A: [2, 4], B: [4, 2], mul: [2, 2, 2, 2] },
+      { v: 64, A: [2, 6], B: [8, 2], mul: [2, 2, 2, 2, 2, 2] },
+      { v: 81, A: [3, 4], B: [9, 2], mul: [3, 3, 3, 3] },
+      { v: 256, A: [2, 8], B: [16, 2], rep: [2, 8] },
+      { v: 512, A: [2, 9], B: [8, 3], rep: [2, 9] },
+      { v: 625, A: [5, 4], B: [25, 2], mul: [5, 5, 5, 5] },
+      { v: 729, A: [3, 6], B: [9, 3], mul: [3, 3, 3, 3, 3, 3] },
+      { v: 1024, A: [2, 10], B: [32, 2], rep: [2, 10] },
+      { v: 1296, A: [6, 4], B: [36, 2], mul: [6, 6, 6, 6] },
+      { v: 2401, A: [7, 4], B: [49, 2], mul: [7, 7, 7, 7] },
+      { v: 4096, A: [2, 12], B: [64, 2], rep: [2, 12] },
+      { v: 6561, A: [3, 8], B: [81, 2], rep: [3, 8] },
+      { v: 10000, A: [10, 4], B: [100, 2], mul: [10, 10, 10, 10] },
+      { v: 15625, A: [5, 6], B: [125, 2], mul: [5, 5, 5, 5, 5, 5] },
+      { v: 46656, A: [6, 6], B: [216, 2], mul: [6, 6, 6, 6, 6, 6] },
+      { v: 1000000, A: [10, 6], B: [1000, 2], rep: [10, 6] },
+    ],
+  },
+  {
+    id: 'eq', name: '一次方程式セット', grade: '中1', short: '一次方程式',
+    types: ['方程式', '移項した式', '解', '検算式'],
+    make: eqCards,
+    groups: [
+      { a: 2, b: 3, c: 9 }, { a: 3, b: -4, c: 14 }, { a: 5, b: 2, c: 27 },
+      { a: 4, b: -6, c: 10 }, { a: 7, b: 5, c: 54 }, { a: 6, b: -8, c: 40 },
+      { a: 8, b: 3, c: 19 }, { a: 9, b: -5, c: 76 }, { a: 10, b: 7, c: 107 },
+      { a: 11, b: -3, c: 118 }, { a: 12, b: 5, c: 149 }, { a: 2, b: -7, c: -11 },
+      { a: 3, b: 10, c: 1 },
+      {
+        // 両辺に x がある発展型：3x−5＝x＋25 → 2x＝30 → x＝15
+        custom: [
+          { type: 0, tokens: [T(3), V('x'), T('−'), T(5), T('='), V('x'), T('+'), T(25)] },
+          { type: 1, tokens: [T(2), V('x'), T('='), T(30)] },
+          { type: 2, tokens: [V('x'), T('='), T(15)] },
+          { type: 3, tokens: [T(3), T('×'), T(15), T('−'), T(5), T('='), T(15), T('+'), T(25)] },
+        ],
+        sol: 15,
+      },
+    ],
+  },
+  {
+    id: 'factor', name: '因数分解セット', grade: '中3', short: '因数分解',
+    types: ['展開形', '因数分解形', '解', 'x＝10 の値'],
+    make: factorCards,
+    groups: [
+      { r: [-1, -2] }, { r: [-1, -3] }, { r: [-2, -3] }, { r: [-1, -4] },
+      { r: [-2, -4] }, { r: [-3, -4] }, { r: [-1, -5] }, { r: [-3, -5] },
+      { r: [-4, -5] }, { r: [-2, -6] }, { r: [-1, 3] }, { r: [-2, 5] },
+      { r: [2, 3] }, { r: [-3, 3] }, { r: [-3, -3] },
+    ],
+  },
+  {
+    id: 'func', name: '一次関数セット', grade: '中2', short: '一次関数',
+    types: ['式', '表', 'グラフ', '言葉'],
+    make: funcCards,
+    groups: [
+      { aN: 1, aD: 1, b: 1 }, { aN: 1, aD: 1, b: -2 }, { aN: 2, aD: 1, b: 1 },
+      { aN: 2, aD: 1, b: -3 }, { aN: 3, aD: 1, b: 2 }, { aN: -1, aD: 1, b: 3 },
+      { aN: -1, aD: 1, b: -1 }, { aN: -2, aD: 1, b: 2 }, { aN: -2, aD: 1, b: -2 },
+      { aN: -3, aD: 1, b: 1 }, { aN: 1, aD: 2, b: 1 }, { aN: -1, aD: 2, b: 2 },
+      { aN: 3, aD: 2, b: -1 },
+    ],
+  },
+];
+
+/* 組の「値キー」（検証・記録用）。同じセット内で組どうし重なってはいけない */
+function groupValueKey(set, g) {
+  switch (set.id) {
+    case 'sqrt': return 'n=' + (g.a * g.a * g.b);
+    case 'ratio': return 'v=' + (g.n / g.d);
+    case 'power': return 'v=' + g.v;
+    case 'eq': return 'x=' + (g.custom ? g.sol : (g.c - g.b) / g.a);
+    case 'factor': { const p = -(g.r[0] + g.r[1]), q = g.r[0] * g.r[1]; return 'p=' + p + ',q=' + q; }
+    case 'func': { const gg = gcd2(g.aN, g.aD); return 'a=' + (g.aN / gg) + '/' + (g.aD / gg) + ',b=' + g.b; }
+    default: return '';
+  }
+}
+
+/* セットの全カード（組×4表現）を平らな配列で返す */
+function buildDeck(set, groupIndexes) {
+  const idxs = groupIndexes || set.groups.map((_, i) => i);
+  const cards = [];
+  for (const gi of idxs) {
+    const forms = set.make(set.groups[gi]);
+    for (const f of forms) cards.push({ setId: set.id, group: gi, type: f.type, tokens: f.tokens });
+  }
+  return cards;
+}
+
+/* トークン列 → プレーンテキスト（照合・印刷の下限確認用） */
+function tokensToText(tokens) {
+  return tokens.map(tok => {
+    switch (tok.k) {
+      case 't': case 'v': return tok.s;
+      case 'rad': return '√(' + tokensToText(tok.body) + ')';
+      case 'frac': return '(' + tokensToText(tok.n) + '/' + tokensToText(tok.d) + ')';
+      case 'sup': return tokensToText(tok.b) + '^' + tok.e;
+      case 'table': return '表[x:' + tok.xs.map(c => tokensToText(c)).join(',') + '|y:' + tok.ys.map(c => tokensToText(c)).join(',') + ']';
+      case 'graph': return 'グラフ(a=' + tok.aN + '/' + tok.aD + ',b=' + tok.b + ')';
+      default: return '';
+    }
+  }).join('');
+}
+</script>
+<script>'use strict';
+/* 選べる数学カード「無理数トランプ」本体 */
+
+/* ---------- ユーティリティ ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function fmtTime(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+}
+
+/* ---------- トークン → HTML（教科書表記） ---------- */
+function tokensToHTML(tokens) {
+  return tokens.map(tok => {
+    switch (tok.k) {
+      case 't': return esc(tok.s);
+      case 'v': return '<i class="var">' + esc(tok.s) + '</i>';
+      case 'rad': return '<span class="rad">√<span class="rad-body">' + tokensToHTML(tok.body) + '</span></span>';
+      case 'frac': return '<span class="frac"><span class="frac-n">' + tokensToHTML(tok.n) + '</span><span class="frac-d">' + tokensToHTML(tok.d) + '</span></span>';
+      case 'sup': return tokensToHTML(tok.b) + '<sup>' + esc(tok.e) + '</sup>';
+      case 'table': {
+        const cell = c => '<td>' + tokensToHTML(c) + '</td>';
+        return '<table class="minitable"><tr><th><i class="var">x</i></th>' + tok.xs.map(cell).join('') + '</tr>' +
+          '<tr><th><i class="var">y</i></th>' + tok.ys.map(cell).join('') + '</tr></table>';
+      }
+      case 'graph': return graphSVG(tok.aN, tok.aD, tok.b);
+      default: return '';
+    }
+  }).join('');
+}
+
+
+/* 直線 y = (aN/aD)x + b を [-5,5]×[-5,5] の枠で描くための端点計算（DOM/Canvas 共通） */
+function graphSegment(aN, aD, b) {
+  const R = 5, a = aN / aD;
+  const cand = [];
+  const yAt = x => a * x + b;
+  const xAt = y => (y - b) / a;
+  if (Math.abs(yAt(-R)) <= R + 1e-9) cand.push([-R, yAt(-R)]);
+  if (Math.abs(yAt(R)) <= R + 1e-9) cand.push([R, yAt(R)]);
+  if (a !== 0) {
+    if (Math.abs(xAt(-R)) <= R + 1e-9) cand.push([xAt(-R), -R]);
+    if (Math.abs(xAt(R)) <= R + 1e-9) cand.push([xAt(R), R]);
+  }
+  const uniq = [];
+  for (const p of cand) if (!uniq.some(q => Math.abs(q[0] - p[0]) < 1e-6 && Math.abs(q[1] - p[1]) < 1e-6)) uniq.push(p);
+  return uniq.slice(0, 2);
+}
+function graphSVG(aN, aD, b) {
+  const R = 5;
+  const X = v => ((v + R) / (2 * R)) * 100;
+  const Y = v => (1 - (v + R) / (2 * R)) * 100;
+  let grid = '';
+  for (let i = -R + 1; i < R; i++) {
+    grid += '<line x1="' + X(i) + '" y1="0" x2="' + X(i) + '" y2="100" stroke="#dde3e8" stroke-width="0.7"/>';
+    grid += '<line x1="0" y1="' + Y(i) + '" x2="100" y2="' + Y(i) + '" stroke="#dde3e8" stroke-width="0.7"/>';
+  }
+  const seg = graphSegment(aN, aD, b);
+  const line = seg.length === 2
+    ? '<line x1="' + X(seg[0][0]) + '" y1="' + Y(seg[0][1]) + '" x2="' + X(seg[1][0]) + '" y2="' + Y(seg[1][1]) + '" stroke="#1e8449" stroke-width="3.2" stroke-linecap="round"/>'
+    : '';
+  const dot = (Math.abs(b) <= R) ? '<circle cx="' + X(0) + '" cy="' + Y(b) + '" r="2.6" fill="#cf3f38"/>' : '';
+  return '<svg class="graphsvg" viewBox="0 0 100 100" aria-label="グラフ">' +
+    '<rect x="0" y="0" width="100" height="100" fill="#ffffff"/>' + grid +
+    '<line x1="' + X(0) + '" y1="0" x2="' + X(0) + '" y2="100" stroke="#5a6a76" stroke-width="1.1"/>' +
+    '<line x1="0" y1="' + Y(0) + '" x2="100" y2="' + Y(0) + '" stroke="#5a6a76" stroke-width="1.1"/>' +
+    line + dot +
+    '<text x="93" y="' + (Y(0) - 2.5) + '" font-size="8" fill="#5a6a76" font-style="italic">x</text>' +
+    '<text x="' + (X(0) + 2.5) + '" y="9" font-size="8" fill="#5a6a76" font-style="italic">y</text>' +
+    '<text x="' + (X(0) + 2) + '" y="' + (Y(0) + 8.5) + '" font-size="7.5" fill="#5a6a76">O</text>' +
+    '</svg>';
+}
+
+/* ---------- サウンド（Web Audio 合成） ---------- */
+const SoundBox = {
+  ctx: null, on: localStorage.getItem('murisuu_sound') !== '0',
+  ensure() {
+    if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* 音なしで続行 */ } }
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx;
+  },
+  tone(freq, t0, dur, type, vol, slideTo) {
+    if (!this.on) return;
+    const ctx = this.ensure(); if (!ctx) return;
+    const t = ctx.currentTime + t0;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.16, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + 0.05);
+  },
+  noise(t0, dur, vol) {
+    if (!this.on) return;
+    const ctx = this.ensure(); if (!ctx) return;
+    const t = ctx.currentTime + t0;
+    const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.8;
+    const g = ctx.createGain(); g.gain.value = vol || 0.12;
+    src.connect(f).connect(g).connect(ctx.destination); src.start(t);
+  },
+  flip() { this.noise(0, 0.09, 0.14); this.tone(660, 0, 0.05, 'triangle', 0.05); },
+  good() { this.tone(784, 0, 0.1, 'triangle', 0.14); this.tone(988, 0.07, 0.12, 'triangle', 0.14); },
+  setDone() { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, i * 0.07, 0.16, 'triangle', 0.15)); },
+  bad() { this.tone(196, 0, 0.16, 'sawtooth', 0.07); this.tone(185, 0.05, 0.2, 'sawtooth', 0.06); },
+  draw() { this.noise(0, 0.07, 0.1); },
+  fanfare() { [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => this.tone(f, i * 0.11, 0.22, 'triangle', 0.15)); },
+  click() { this.tone(520, 0, 0.05, 'triangle', 0.07); },
+};
+
+/* ---------- 記録 ---------- */
+const REC_KEY = 'murisuu_trump_records_v1';
+function loadRecords() { try { return JSON.parse(localStorage.getItem(REC_KEY)) || {}; } catch (e) { return {}; } }
+function saveRecord(key, value) {
+  const r = loadRecords(); r[key] = value; localStorage.setItem(REC_KEY, JSON.stringify(r)); renderRecords();
+}
+function renderRecords() {
+  const r = loadRecords();
+  const lines = [];
+  for (const set of SETS) {
+    const parts = [];
+    const ms = r['memory_solo_' + set.id];
+    if (ms) parts.push('神経衰弱ソロ： ' + ms.turns + '手・' + fmtTime(ms.time));
+    const mc = r['memory_cpu_' + set.id];
+    if (mc) parts.push('対戦： ' + mc.w + '勝' + mc.l + '敗' + (mc.d ? mc.d + '分' : ''));
+    const bb = r['baba_' + set.id];
+    if (bb) parts.push('ババぬき： ' + bb.w + '勝' + bb.l + '敗');
+    const fl = r['flash_' + set.id];
+    if (fl) parts.push('フラッシュ： ' + fmtTime(fl.time) + '（ペナルティ込）');
+    if (parts.length) lines.push('<div><b>' + esc(set.name) + '</b>　' + parts.join('　／　') + '</div>');
+  }
+  $('recordsBox').innerHTML = lines.length ? lines.join('') : 'まだ記録がありません。遊ぶと、ここに残ります。';
+}
+
+/* ---------- 画面遷移 ---------- */
+let currentSet = SETS[0];
+let returnTo = 'home';
+function show(name) {
+  for (const id of ['screen-home', 'screen-game', 'screen-table', 'screen-print', 'screen-about'])
+    $(id).classList.toggle('hidden', id !== 'screen-' + name);
+  window.scrollTo(0, 0);
+}
+
+/* ---------- カード DOM ---------- */
+let uidSeq = 0;
+function makeCardEl(card, opts) {
+  opts = opts || {};
+  const btn = document.createElement('button');
+  btn.className = 'pcard' + (opts.faceUp ? ' up' : '');
+  btn.type = 'button';
+  const color = card.type === 'joker' ? '#333' : TYPE_COLORS[card.type];
+  const band = card.type === 'joker' ? 'ジョーカー' : currentSet.types[card.type];
+  btn.innerHTML =
+    '<span class="inner">' +
+    '<span class="face back"><span class="blogo">√</span></span>' +
+    '<span class="face front" style="border-color:' + color + '">' +
+    '<span class="band" style="background:' + color + '">' + esc(band) + '</span>' +
+    '<span class="math">' + tokensToHTML(card.tokens) + '</span>' +
+    '</span></span>';
+  btn._card = card;
+  return btn;
+}
+function fitCardMath(scope) {
+  // 長い式は自動で少し小さくする
+  const els = (scope || document).querySelectorAll('.pcard .math');
+  els.forEach(el => {
+    let size = parseFloat(getComputedStyle(el).fontSize) || 17;
+    el.style.fontSize = '';
+    size = parseFloat(getComputedStyle(el).fontSize) || 17;
+    let guard = 0;
+    while ((el.scrollWidth > el.clientWidth + 2 || el.scrollHeight > el.clientHeight + 2) && size > 9 && guard < 24) {
+      size -= 1; el.style.fontSize = size + 'px'; guard++;
+    }
+  });
+}
+
+/* ---------- ホーム ---------- */
+function renderSetGrid() {
+  const grid = $('setGrid'); grid.innerHTML = '';
+  for (const set of SETS) {
+    const b = document.createElement('button');
+    b.className = 'setbtn' + (set.id === currentSet.id ? ' sel' : '');
+    b.innerHTML = esc(set.name) + '<small>' + esc(set.grade) + '　全' + set.groups.length + '組（' + (set.groups.length * 4) + '枚）</small>';
+    b.addEventListener('click', () => { SoundBox.click(); currentSet = set; renderSetGrid(); });
+    grid.appendChild(b);
+  }
+}
+
+/* ---------- 一覧表 ---------- */
+function renderTable() {
+  $('tableTitle').textContent = '値の一覧表 ― ' + currentSet.name;
+  const tbl = $('refTable');
+  let html = '<tr>' + currentSet.types.map((t, i) => '<th style="background:' + TYPE_COLORS[i] + '">' + esc(t) + '</th>').join('') + '</tr>';
+  currentSet.groups.forEach((g, gi) => {
+    const forms = currentSet.make(g);
+    html += '<tr>' + forms.map(f => '<td>' + tokensToHTML(f.tokens) + '</td>').join('') + '</tr>';
+  });
+  tbl.innerHTML = html;
+}
+
+/* ---------- 汎用ゲーム枠 ---------- */
+let timerId = null, gameStart = 0;
+function startTimer() {
+  gameStart = Date.now();
+  stopTimer();
+  timerId = setInterval(() => { $('chipTime').textContent = fmtTime((Date.now() - gameStart) / 1000); }, 250);
+  $('chipTime').textContent = '0:00';
+}
+function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+function elapsedSec() { return (Date.now() - gameStart) / 1000; }
+function setMsg(html) { $('gameMsg').innerHTML = html; }
+function openGame(title) {
+  show('game');
+  $('gameTitle').textContent = title;
+  $('chipTurns').textContent = '0';
+  $('chipScore').textContent = '0';
+  $('board').innerHTML = ''; $('handArea').innerHTML = '';
+  $('cpuArea').classList.add('hidden'); $('cpuArea').innerHTML = '';
+  setMsg('');
+}
+
+/* ================================================================
+   神経衰弱（ソロ／CPU対戦）
+   ルール：手番のプレイヤーはカードを1枚ずつめくる。最初にめくった
+   カードと同じ組のカードだけを続けてめくれる。違う組をめくったら
+   その手番でめくったカードは全部伏せに戻り、手番交代。
+   同じ組が4枚そろったら、その組を獲得して手番継続。
+   ================================================================ */
+const Mem = {
+  active: false, vsCpu: false, gen: 0,
+  cards: [], byUid: new Map(), collected: new Set(),
+  turn: 'you', target: null, openUids: [], turns: 0,
+  score: { you: 0, cpu: 0 }, totalGroups: 0, busy: false,
+  cpuMem: new Map(), // uid -> group（見たカードの記憶）
+  started: false,
+
+  start(vsCpu, groupCount) {
+    this.gen++;
+    this.vsCpu = vsCpu;
+    this.active = true; this.busy = false;
+    const set = currentSet;
+    const allIdx = shuffle(set.groups.map((_, i) => i));
+    const chosen = allIdx.slice(0, Math.min(groupCount, set.groups.length));
+    this.totalGroups = chosen.length;
+    const deck = shuffle(buildDeck(set, chosen).map(c => ({ ...c, uid: ++uidSeq })));
+    this.cards = deck; this.byUid = new Map(deck.map(c => [c.uid, c]));
+    this.collected = new Set(); this.openUids = []; this.target = null;
+    this.turn = 'you'; this.turns = 0; this.score = { you: 0, cpu: 0 };
+    this.cpuMem = new Map(); this.started = true;
+    openGame('神経衰弱' + (vsCpu ? '・対戦' : '（ソロ）') + ' ― ' + set.name);
+    const board = $('board');
+    const cols = deck.length <= 24 ? 6 : deck.length <= 40 ? 8 : 8;
+    board.innerHTML = '<div class="grid" style="grid-template-columns:repeat(' + cols + ',1fr)"></div>';
+    const grid = board.firstChild;
+    for (const card of deck) {
+      const el = makeCardEl(card);
+      el.dataset.uid = card.uid;
+      el.addEventListener('click', () => this.humanFlip(card.uid));
+      grid.appendChild(el);
+    }
+    fitCardMath(board);
+    startTimer();
+    this.updateChips();
+    setMsg(vsCpu
+      ? 'あなたの番です。カードをめくって、同じ組の4枚をそろえましょう。'
+      : 'カードをめくって、同じ組の4枚をそろえましょう。まちがえたら、その回にめくったカードは戻ります。');
+  },
+
+  el(uid) { return $('board').querySelector('[data-uid="' + uid + '"]'); },
+  updateChips() {
+    $('chipTurns').textContent = this.turns;
+    $('chipScore').textContent = this.vsCpu ? ('あなた ' + this.score.you + ' ― CPU ' + this.score.cpu) : this.score.you;
+  },
+
+  rememberCpu(uid, group) {
+    // CPU は見たカードを 85% の確率で覚える
+    if (Math.random() < 0.85) this.cpuMem.set(uid, group);
+  },
+
+  flipUp(uid, byCpu) {
+    const card = this.byUid.get(uid);
+    const el = this.el(uid);
+    if (el) { el.classList.add('up'); }
+    SoundBox.flip();
+    this.rememberCpu(uid, card.group);
+    if (this.target === null) this.target = card.group;
+    this.openUids.push(uid);
+    return card;
+  },
+
+  async settleAfterFlip(card, byCpu) {
+    // めくった直後の判定（そろった／外れた）
+    if (card.group !== this.target) {
+      // 外れ：少し見せてから全部戻す
+      this.busy = true;
+      SoundBox.bad();
+      setMsg('「' + currentSet.name + '」の別の組でした…。めくったカードを戻します。');
+      await wait(950);
+      for (const u of this.openUids) { const e = this.el(u); if (e) e.classList.remove('up'); }
+      this.openUids = []; this.target = null;
+      this.turns++; this.updateChips();
+      this.busy = false;
+      this.endTurn();
+      return 'miss';
+    }
+    const mine = this.openUids.filter(u => this.byUid.get(u).group === this.target);
+    if (mine.length === 4) {
+      // 1組そろった
+      this.busy = true;
+      SoundBox.setDone();
+      for (const u of mine) {
+        const e = this.el(u);
+        if (e) { e.classList.add('collected', 'pop'); e.disabled = true; }
+        this.cpuMem.delete(u);
+      }
+      this.collected.add(this.target);
+      if (this.turn === 'you') this.score.you++; else this.score.cpu++;
+      this.openUids = []; this.target = null;
+      this.updateChips();
+      setMsg('<span class="big">1組そろいました！</span> ' + (this.turn === 'you' ? 'あなたの' : 'CPUの') + '手番が続きます。');
+      await wait(650);
+      this.busy = false;
+      if (this.collected.size >= this.totalGroups) { this.finish(); return 'done'; }
+      if (this.turn === 'cpu') this.cpuTakeTurn();
+      return 'collect';
+    }
+    SoundBox.good();
+    return 'continue';
+  },
+
+  async humanFlip(uid) {
+    if (!this.active || this.busy || this.turn !== 'you') return;
+    const card = this.byUid.get(uid);
+    if (!card || this.collected.has(card.group)) return;
+    const el = this.el(uid);
+    if (!el || el.classList.contains('up')) return;
+    const c = this.flipUp(uid, false);
+    await this.settleAfterFlip(c, false);
+  },
+
+  endTurn() {
+    if (!this.active) return;
+    if (this.collected.size >= this.totalGroups) { this.finish(); return; }
+    if (this.vsCpu) {
+      this.turn = this.turn === 'you' ? 'cpu' : 'you';
+      if (this.turn === 'cpu') { setMsg('CPUの番です。'); this.cpuTakeTurn(); }
+      else setMsg('あなたの番です。');
+    } else {
+      setMsg('カードをめくって、同じ組の4枚をそろえましょう。');
+    }
+  },
+
+  knownByGroup() {
+    const map = new Map();
+    for (const [uid, g] of this.cpuMem) {
+      const el = this.el(uid);
+      if (!el || el.classList.contains('up') || this.collected.has(g)) continue;
+      if (!map.has(g)) map.set(g, []);
+      map.get(g).push(uid);
+    }
+    return map;
+  },
+  faceDownUids(except) {
+    return this.cards
+      .filter(c => !this.collected.has(c.group) && !(except || []).includes(c.uid))
+      .map(c => c.uid)
+      .filter(uid => { const e = this.el(uid); return e && !e.classList.contains('up'); });
+  },
+
+  async cpuTakeTurn() {
+    const gen = this.gen;
+    this.busy = true;
+    await wait(650);
+    while (this.active && gen === this.gen && this.turn === 'cpu') {
+      const known = this.knownByGroup();
+      // 4枚そろう組が分かれば取りに行く
+      let firstUid = null;
+      let bestGroup = null, bestList = [];
+      for (const [g, list] of known) if (list.length > bestList.length) { bestGroup = g; bestList = list; }
+      if (bestList.length >= 2) firstUid = bestList[0];
+      else {
+        const unknown = this.faceDownUids().filter(u => !this.cpuMem.has(u));
+        const pool = unknown.length ? unknown : this.faceDownUids();
+        if (!pool.length) break;
+        firstUid = pool[Math.floor(Math.random() * pool.length)];
+      }
+      const first = this.flipUp(firstUid, true);
+      let result = await this.settleStepCpu(first, gen);
+      if (result === 'collect' || result === 'done') { await wait(350); continue; }
+      if (result === 'miss' || result === 'done') break;
+      // continue の場合は settleStepCpu 内で最後まで処理済み
+      break;
+    }
+    this.busy = false;
+  },
+
+  // CPU が1枚めくったあと、組をそろえに行く一連の動き
+  async settleStepCpu(firstCard, gen) {
+    let card = firstCard;
+    while (this.active && gen === this.gen) {
+      if (card.group !== this.target) { await this.settleAfterFlip(card, true); return 'miss'; }
+      const mine = this.openUids.filter(u => this.byUid.get(u).group === this.target);
+      if (mine.length === 4) { const r = await this.settleAfterFlip(card, true); return r; }
+      // 次の1枚：分かっている位置 → なければ未知のカード
+      const known = this.knownByGroup();
+      const list = (known.get(this.target) || []).filter(u => !this.openUids.includes(u));
+      let nextUid;
+      if (list.length) nextUid = list[0];
+      else {
+        const unknown = this.faceDownUids(this.openUids).filter(u => !this.cpuMem.has(u));
+        const pool = unknown.length ? unknown : this.faceDownUids(this.openUids);
+        if (!pool.length) return 'miss';
+        nextUid = pool[Math.floor(Math.random() * pool.length)];
+      }
+      await wait(620);
+      card = this.flipUp(nextUid, true);
+    }
+    return 'done';
+  },
+
+  finish() {
+    this.active = false; stopTimer();
+    const t = elapsedSec();
+    SoundBox.fanfare();
+    if (this.vsCpu) {
+      const { you, cpu } = this.score;
+      const key = 'memory_cpu_' + currentSet.id;
+      const rec = loadRecords()[key] || { w: 0, l: 0, d: 0 };
+      let result;
+      if (you > cpu) { rec.w++; result = 'あなたの勝ち！'; }
+      else if (you < cpu) { rec.l++; result = 'CPUの勝ち…'; }
+      else { rec.d = (rec.d || 0) + 1; result = '引き分け'; }
+      saveRecord(key, rec);
+      setMsg('<span class="big">' + result + '</span> あなた ' + you + '組 ― CPU ' + cpu + '組（' + this.turns + '手・' + fmtTime(t) + '）');
+    } else {
+      const key = 'memory_solo_' + currentSet.id;
+      const prev = loadRecords()[key];
+      let note = '';
+      if (!prev || this.turns < prev.turns || (this.turns === prev.turns && t < prev.time)) {
+        saveRecord(key, { turns: this.turns, time: Math.round(t) }); note = ' ベスト記録を更新しました！';
+      }
+      setMsg('<span class="big">全部そろいました！</span> ' + this.totalGroups + '組・' + this.turns + '手・' + fmtTime(t) + '。' + note);
+    }
+  },
+
+  quit() { this.active = false; this.gen++; stopTimer(); },
+};
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ================================================================
+   ババぬき（あなた＋CPU 3人）
+   平方根セット：√0 ジョーカー入り（61枚）。
+   他セット：どれか1組から3枚を抜き、残り1枚が「ジジ」（最後に残る）。
+   4枚そろった組は自動で捨てる。手札が空になった人から上がり、
+   最後までカードが残った人が負け。
+   ================================================================ */
+const Baba = {
+  active: false, gen: 0,
+  players: [], turnIdx: 0, ranks: [], loser: null, busy: false,
+
+  buildDeck() {
+    const set = currentSet;
+    let deck = buildDeck(set).map(c => ({ ...c, uid: ++uidSeq }));
+    if (set.id === 'sqrt') {
+      deck.push({ setId: set.id, group: -1, type: 'joker', tokens: set.joker.tokens, uid: ++uidSeq, joker: true });
+    } else {
+      const g = Math.floor(Math.random() * set.groups.length);
+      const ofGroup = deck.filter(c => c.group === g);
+      const remove = new Set(shuffle(ofGroup).slice(0, 3).map(c => c.uid));
+      deck = deck.filter(c => !remove.has(c.uid));
+      const kept = deck.find(c => c.group === g);
+      if (kept) kept.jiji = true;
+    }
+    return shuffle(deck);
+  },
+
+  start() {
+    this.gen++;
+    this.active = true; this.busy = false;
+    this.players = [
+      { name: 'あなた', hand: [], human: true, done: false },
+      { name: 'CPU 1', hand: [], human: false, done: false },
+      { name: 'CPU 2', hand: [], human: false, done: false },
+      { name: 'CPU 3', hand: [], human: false, done: false },
+    ];
+    this.ranks = []; this.loser = null;
+    const deck = this.buildDeck();
+    deck.forEach((c, i) => this.players[i % 4].hand.push(c));
+    openGame('ババぬき ― ' + currentSet.name);
+    $('cpuArea').classList.remove('hidden');
+    startTimer();
+    // 初期手札のそろった組を捨てる
+    for (const p of this.players) this.discardSets(p, true);
+    for (const p of this.players) if (p.hand.length === 0 && !p.done) this.markDone(p);
+    this.turnIdx = 0;
+    this.render();
+    setMsg('配りました。そろった組は自動で捨ててあります。<b>あなたの番</b>です。右どなりの CPU 1 のカード（裏向き）を1枚タップして引いてください。');
+    this.render();
+  },
+
+  discardSets(p, silent) {
+    const byGroup = new Map();
+    for (const c of p.hand) {
+      if (c.joker || c.jiji) continue;
+      if (!byGroup.has(c.group)) byGroup.set(c.group, []);
+      byGroup.get(c.group).push(c);
+    }
+    let discarded = 0;
+    for (const [g, list] of byGroup) {
+      if (list.length === 4) {
+        p.hand = p.hand.filter(c => c.group !== g);
+        discarded++;
+      }
+    }
+    if (discarded && !silent) SoundBox.setDone();
+    return discarded;
+  },
+
+  markDone(p) {
+    p.done = true;
+    this.ranks.push(p.name);
+  },
+
+  nextActive(from) {
+    let i = from;
+    do { i = (i + 1) % 4; } while (this.players[i].done && i !== from);
+    return i;
+  },
+
+  render() {
+    // CPU エリア
+    const area = $('cpuArea'); area.innerHTML = '';
+    this.players.slice(1).forEach((p, k) => {
+      const idx = k + 1;
+      const div = document.createElement('div');
+      div.className = 'cpu' + (p.done ? ' done' : '') + (this.turnIdx === idx && this.active ? ' turn' : '');
+      const isTarget = this.active && !this.busy && this.turnIdx === 0 && this.nextActive(0) === idx;
+      div.innerHTML = '<div class="nm">' + esc(p.name) + (p.done ? '（上がり）' : '') + '</div>' +
+        '<div class="ct">手札 ' + p.hand.length + ' 枚</div>';
+      const backs = document.createElement('div'); backs.className = 'minibacks';
+      const shuffledIdx = p.hand.map((_, i) => i);
+      for (const hi of shuffledIdx) {
+        const b = document.createElement('button');
+        b.className = 'miniback' + (isTarget ? ' pickable' : '');
+        b.type = 'button';
+        if (isTarget) b.addEventListener('click', () => this.humanDraw(idx, hi));
+        backs.appendChild(b);
+      }
+      div.appendChild(backs);
+      area.appendChild(div);
+    });
+    // 自分の手札
+    const hand = $('handArea');
+    const me = this.players[0];
+    let html = '<div class="handlabel">あなたの手札（' + me.hand.length + ' 枚）' + (me.done ? ' ― 上がり！' : '') + '</div><div class="hand">';
+    hand.innerHTML = html + '</div>';
+    const row = hand.querySelector('.hand');
+    const sorted = me.hand.slice().sort((a, b) => (a.group - b.group) || (String(a.type) < String(b.type) ? -1 : 1));
+    for (const c of sorted) {
+      const el = makeCardEl(c, { faceUp: true });
+      el.disabled = true;
+      row.appendChild(el);
+    }
+    fitCardMath(hand);
+    $('chipTurns').textContent = this.ranks.length ? ('上がり ' + this.ranks.length + '人') : '0';
+    $('chipScore').textContent = '残り ' + this.players.filter(p => !p.done).length + '人';
+  },
+
+  async humanDraw(targetIdx, handIdx) {
+    if (!this.active || this.busy || this.turnIdx !== 0) return;
+    this.busy = true;
+    await this.drawFrom(0, targetIdx, handIdx);
+    this.busy = false;
+    this.afterTurn();
+  },
+
+  async drawFrom(pIdx, targetIdx, handIdx) {
+    const P = this.players[pIdx], Q = this.players[targetIdx];
+    if (!Q.hand.length) return;
+    const hi = handIdx != null ? handIdx : Math.floor(Math.random() * Q.hand.length);
+    const [card] = Q.hand.splice(hi, 1);
+    P.hand.push(card);
+    SoundBox.draw();
+    if (P.human || Q.human) {
+      setMsg(P.name + ' が ' + Q.name + ' から1枚引きました。' + (Q.hand.length === 0 ? ' ' + Q.name + ' は上がり！' : ''));
+    } else {
+      setMsg(P.name + ' が ' + Q.name + ' から1枚引きました。');
+    }
+    const d = this.discardSets(P);
+    if (d) setMsg(P.name + ' は ' + d + ' 組そろえて捨てました。' + (P.hand.length === 0 ? ' ' + P.name + ' は上がり！' : ''));
+    if (Q.hand.length === 0 && !Q.done) this.markDone(Q);
+    if (P.hand.length === 0 && !P.done) this.markDone(P);
+    this.render();
+    await wait(P.human || Q.human ? 650 : 420);
+  },
+
+  async afterTurn() {
+    if (!this.active) return;
+    if (this.checkEnd()) return;
+    this.turnIdx = this.nextActive(this.turnIdx);
+    this.render();
+    // CPU の手番を続けて処理
+    const gen = this.gen;
+    while (this.active && gen === this.gen && this.turnIdx !== 0) {
+      const pIdx = this.turnIdx;
+      const target = this.nextActive(pIdx);
+      if (target === pIdx) break;
+      this.busy = true;
+      await wait(760);
+      if (!this.active || gen !== this.gen) return;
+      await this.drawFrom(pIdx, target);
+      this.busy = false;
+      if (this.checkEnd()) return;
+      this.turnIdx = this.nextActive(this.turnIdx);
+      this.render();
+    }
+    if (this.active && gen === this.gen) {
+      this.render();
+      if (!this.players[0].done) setMsg('<b>あなたの番</b>です。右どなりの人のカードを1枚引いてください。');
+    }
+  },
+
+  checkEnd() {
+    const remain = this.players.filter(p => !p.done);
+    if (remain.length <= 1) {
+      this.active = false; stopTimer();
+      const loser = remain[0] || this.players.find(p => p.hand.length > 0);
+      this.loser = loser;
+      const key = 'baba_' + currentSet.id;
+      const rec = loadRecords()[key] || { w: 0, l: 0 };
+      if (loser && loser.human) { rec.l++; SoundBox.bad(); setMsg('<span class="big">最後にカードが残ったのは あなた…負けです。</span> また挑戦しましょう。'); }
+      else { rec.w++; SoundBox.fanfare(); setMsg('<span class="big">あなたの勝ち！</span> 最後に残ったのは ' + (loser ? esc(loser.name) : '') + ' でした。'); }
+      saveRecord(key, rec);
+      this.render();
+      return true;
+    }
+    return false;
+  },
+
+  quit() { this.active = false; this.gen++; stopTimer(); },
+};
+
+/* ================================================================
+   フラッシュ練習
+   見本と同じ組のカード3枚を、候補8枚からすばやくタップ。
+   5ラウンド制。まちがい1回につき +2秒。
+   ================================================================ */
+const Flash = {
+  active: false, gen: 0,
+  round: 0, rounds: 5, found: 0, mistakes: 0, target: null, busy: false,
+
+  start() {
+    this.gen++;
+    this.active = true; this.round = 0; this.mistakes = 0; this.busy = false;
+    openGame('フラッシュ練習 ― ' + currentSet.name);
+    startTimer();
+    this.nextRound();
+  },
+
+  nextRound() {
+    if (!this.active) return;
+    if (this.round >= this.rounds) { this.finish(); return; }
+    this.round++;
+    this.found = 0;
+    const set = currentSet;
+    const gi = Math.floor(Math.random() * set.groups.length);
+    const forms = set.make(set.groups[gi]).map(f => ({ setId: set.id, group: gi, type: f.type, tokens: f.tokens, uid: ++uidSeq }));
+    const targetIdx = Math.floor(Math.random() * 4);
+    this.target = forms[targetIdx];
+    const mates = forms.filter((_, i) => i !== targetIdx);
+    // ダミー：ほかの組から5枚
+    const others = [];
+    const otherGroups = shuffle(set.groups.map((_, i) => i).filter(i => i !== gi));
+    for (const og of otherGroups) {
+      const of = set.make(set.groups[og]);
+      const pick = of[Math.floor(Math.random() * 4)];
+      others.push({ setId: set.id, group: og, type: pick.type, tokens: pick.tokens, uid: ++uidSeq });
+      if (others.length >= 5) break;
+    }
+    const candidates = shuffle([...mates, ...others]);
+    const board = $('board');
+    board.innerHTML =
+      '<div class="targetrow"><div id="flashTarget"></div>' +
+      '<div class="targetinfo">← 見本と同じ組のカードを <b>3枚</b> タップ！<br>ラウンド ' + this.round + ' / ' + this.rounds +
+      '　｜　見つけた数 <b id="flashFound">0</b> / 3　｜　ミス <b>' + this.mistakes + '</b>（1回 +2秒）</div></div>' +
+      '<div class="flashgrid" id="flashGrid"></div>';
+    const t = makeCardEl(this.target, { faceUp: true });
+    t.disabled = true;
+    $('flashTarget').appendChild(t);
+    const grid = $('flashGrid');
+    for (const c of candidates) {
+      const el = makeCardEl(c, { faceUp: true });
+      el.dataset.uid = c.uid;
+      el.addEventListener('click', () => this.tap(el, c));
+      grid.appendChild(el);
+    }
+    fitCardMath(board);
+    this.updateChips();
+    setMsg('見本と同じ組の3枚を、できるだけ速く見つけましょう。');
+  },
+
+  updateChips() {
+    $('chipTurns').textContent = this.mistakes;
+    $('chipScore').textContent = this.round + ' / ' + this.rounds + ' ラウンド';
+    const f = $('flashFound'); if (f) f.textContent = this.found;
+  },
+
+  async tap(el, card) {
+    if (!this.active || this.busy) return;
+    if (el.classList.contains('found')) return;
+    if (card.group === this.target.group) {
+      el.classList.add('found');
+      SoundBox.good();
+      this.found++;
+      this.updateChips();
+      if (this.found >= 3) {
+        this.busy = true;
+        SoundBox.setDone();
+        setMsg('<span class="big">3枚そろいました！</span>');
+        await wait(700);
+        this.busy = false;
+        this.nextRound();
+      }
+    } else {
+      el.classList.add('wrong');
+      SoundBox.bad();
+      this.mistakes++;
+      this.updateChips();
+      setTimeout(() => el.classList.remove('wrong'), 380);
+      setMsg('ちがう組です…（ペナルティ +2秒）');
+    }
+  },
+
+  finish() {
+    this.active = false; stopTimer();
+    const total = elapsedSec() + this.mistakes * 2;
+    SoundBox.fanfare();
+    const key = 'flash_' + currentSet.id;
+    const prev = loadRecords()[key];
+    let note = '';
+    if (!prev || total < prev.time) { saveRecord(key, { time: Math.round(total * 10) / 10 }); note = ' ベスト記録を更新しました！'; }
+    $('board').innerHTML = '<div class="panel result"><span class="big">フラッシュ練習 終了！</span><br>' +
+      'タイム ' + fmtTime(total) + '（実時間 ' + fmtTime(elapsedSec()) + ' ＋ ミス ' + this.mistakes + ' 回 × 2秒）<br>' + note + '</div>';
+    setMsg('おつかれさまでした。「やめる」でもどります。もう一度遊ぶときは、ホームからどうぞ。');
+  },
+
+  quit() { this.active = false; this.gen++; stopTimer(); },
+};
+
+/* ================================================================
+   印刷用カードシート（A4・300dpi・カード縦9cm×横7cm）
+   ================================================================ */
+const PRINT = { W: 2480, H: 3508, CW: 827, CH: 1063, COLS: 2, ROWS: 3 };
+
+function serifFont(size, italic) {
+  return (italic ? 'italic ' : '') + size + 'px "Hiragino Mincho ProN","YuMincho","Noto Serif JP","Times New Roman",serif';
+}
+function measureTokens(ctx, tokens, size) {
+  let w = 0;
+  for (const tok of tokens) {
+    switch (tok.k) {
+      case 't': ctx.font = serifFont(size); w += ctx.measureText(tok.s).width; break;
+      case 'v': ctx.font = serifFont(size, true); w += ctx.measureText(tok.s).width; break;
+      case 'rad': {
+        ctx.font = serifFont(size);
+        w += ctx.measureText('√').width + measureTokens(ctx, tok.body, size) + size * 0.08;
+        break;
+      }
+      case 'frac': {
+        const s2 = size * 0.74;
+        w += Math.max(measureTokens(ctx, tok.n, s2), measureTokens(ctx, tok.d, s2)) + size * 0.34;
+        break;
+      }
+      case 'sup': {
+        w += measureTokens(ctx, tok.b, size);
+        ctx.font = serifFont(size * 0.62);
+        w += ctx.measureText(tok.e).width;
+        break;
+      }
+      case 'table': {
+        const s2 = size * 0.6;
+        let tw = size * 0.55;
+        for (let ci = 0; ci < tok.xs.length; ci++) {
+          tw += Math.max(measureTokens(ctx, tok.xs[ci], s2), measureTokens(ctx, tok.ys[ci], s2)) + size * 0.3;
+        }
+        w += tw;
+        break;
+      }
+      case 'graph': w += size * 3.0; break;
+    }
+  }
+  return w;
+}
+function drawTokens(ctx, tokens, x, yBase, size) {
+  // yBase は本文のベースライン。描画した幅を返す
+  let cx = x;
+  for (const tok of tokens) {
+    switch (tok.k) {
+      case 't': ctx.font = serifFont(size); ctx.fillText(tok.s, cx, yBase); cx += ctx.measureText(tok.s).width; break;
+      case 'v': ctx.font = serifFont(size, true); ctx.fillText(tok.s, cx, yBase); cx += ctx.measureText(tok.s).width; break;
+      case 'rad': {
+        ctx.font = serifFont(size);
+        const rw = ctx.measureText('√').width;
+        ctx.fillText('√', cx, yBase);
+        const bodyW = measureTokens(ctx, tok.body, size);
+        drawTokens(ctx, tok.body, cx + rw, yBase, size);
+        ctx.beginPath();
+        ctx.lineWidth = Math.max(2, size * 0.055);
+        const ly = yBase - size * 0.82;
+        ctx.moveTo(cx + rw * 0.82, ly);
+        ctx.lineTo(cx + rw + bodyW + size * 0.05, ly);
+        ctx.stroke();
+        cx += rw + bodyW + size * 0.08;
+        break;
+      }
+      case 'frac': {
+        const s2 = size * 0.74;
+        const nw = measureTokens(ctx, tok.n, s2), dw = measureTokens(ctx, tok.d, s2);
+        const w = Math.max(nw, dw) + size * 0.34;
+        const lineY = yBase - size * 0.28;
+        ctx.beginPath(); ctx.lineWidth = Math.max(2, size * 0.05);
+        ctx.moveTo(cx + size * 0.05, lineY); ctx.lineTo(cx + w - size * 0.05, lineY); ctx.stroke();
+        drawTokens(ctx, tok.n, cx + (w - nw) / 2, lineY - size * 0.18, s2);
+        drawTokens(ctx, tok.d, cx + (w - dw) / 2, lineY + size * 0.78, s2);
+        cx += w;
+        break;
+      }
+      case 'sup': {
+        const bw = drawTokens(ctx, tok.b, cx, yBase, size);
+        ctx.font = serifFont(size * 0.62);
+        ctx.fillText(tok.e, cx + bw, yBase - size * 0.52);
+        cx += bw + ctx.measureText(tok.e).width;
+        break;
+      }
+      case 'table': {
+        const s2 = size * 0.6;
+        const rowH = size * 0.92;
+        const colW = [size * 0.55];
+        for (let ci = 0; ci < tok.xs.length; ci++) {
+          colW.push(Math.max(measureTokens(ctx, tok.xs[ci], s2), measureTokens(ctx, tok.ys[ci], s2)) + size * 0.3);
+        }
+        const totalW = colW.reduce((p, q) => p + q, 0);
+        const top = yBase - rowH * 1.32;
+        ctx.save();
+        ctx.lineWidth = Math.max(1.5, size * 0.028);
+        ctx.strokeStyle = '#5a6a76';
+        let xx = cx;
+        const colX = [xx];
+        for (const wdt of colW) { ctx.strokeRect(xx, top, wdt, rowH * 2); xx += wdt; colX.push(xx); }
+        ctx.font = serifFont(s2, true); ctx.fillStyle = '#1d2a35'; ctx.textAlign = 'left';
+        ctx.fillText('x', cx + size * 0.14, top + rowH * 0.72);
+        ctx.fillText('y', cx + size * 0.14, top + rowH * 1.72);
+        for (let ci = 0; ci < tok.xs.length; ci++) {
+          const cw = colW[ci + 1], x0 = colX[ci + 1];
+          const wx = measureTokens(ctx, tok.xs[ci], s2);
+          drawTokens(ctx, tok.xs[ci], x0 + (cw - wx) / 2, top + rowH * 0.72, s2);
+          const wy = measureTokens(ctx, tok.ys[ci], s2);
+          drawTokens(ctx, tok.ys[ci], x0 + (cw - wy) / 2, top + rowH * 1.72, s2);
+        }
+        ctx.restore();
+        cx += totalW;
+        break;
+      }
+      case 'graph': {
+        const S = size * 3.0, R = 5;
+        const top = yBase - S * 0.78;
+        const X = v => cx + ((v + R) / (2 * R)) * S;
+        const Y = v => top + (1 - (v + R) / (2 * R)) * S;
+        ctx.save();
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(cx, top, S, S);
+        ctx.lineWidth = Math.max(1, size * 0.016);
+        ctx.strokeStyle = '#dde3e8';
+        for (let i = -R + 1; i < R; i++) {
+          ctx.beginPath(); ctx.moveTo(X(i), top); ctx.lineTo(X(i), top + S); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(cx, Y(i)); ctx.lineTo(cx + S, Y(i)); ctx.stroke();
+        }
+        ctx.lineWidth = Math.max(1.5, size * 0.026); ctx.strokeStyle = '#5a6a76';
+        ctx.beginPath(); ctx.moveTo(X(0), top); ctx.lineTo(X(0), top + S); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, Y(0)); ctx.lineTo(cx + S, Y(0)); ctx.stroke();
+        const seg = graphSegment(tok.aN, tok.aD, tok.b);
+        if (seg.length === 2) {
+          ctx.lineWidth = Math.max(2.5, size * 0.07); ctx.strokeStyle = '#1e8449'; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(X(seg[0][0]), Y(seg[0][1])); ctx.lineTo(X(seg[1][0]), Y(seg[1][1])); ctx.stroke();
+        }
+        if (Math.abs(tok.b) <= R) {
+          ctx.fillStyle = '#cf3f38';
+          ctx.beginPath(); ctx.arc(X(0), Y(tok.b), size * 0.075, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = '#9aa7b1'; ctx.lineWidth = Math.max(1.5, size * 0.03);
+        ctx.strokeRect(cx, top, S, S);
+        ctx.restore();
+        cx += S;
+        break;
+      }
+    }
+  }
+  return cx - x;
+}
+
+function drawCardOnSheet(ctx, card, x, y, set, groupNo) {
+  const { CW, CH } = PRINT;
+  // 切り取り線（点線）
+  ctx.save();
+  ctx.strokeStyle = '#9a9a9a'; ctx.lineWidth = 2; ctx.setLineDash([14, 10]);
+  ctx.strokeRect(x, y, CW, CH);
+  ctx.setLineDash([]);
+  // カード地
+  ctx.fillStyle = '#fffdf7';
+  roundRect(ctx, x + 7, y + 7, CW - 14, CH - 14, 34); ctx.fill();
+  const color = card.type === 'joker' ? '#333333' : TYPE_COLORS[card.type];
+  ctx.strokeStyle = color; ctx.lineWidth = 7;
+  roundRect(ctx, x + 12, y + 12, CW - 24, CH - 24, 30); ctx.stroke();
+  // 上部バンド
+  ctx.fillStyle = color;
+  roundRectTop(ctx, x + 12, y + 12, CW - 24, 92, 30); ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 44px "Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const bandText = card.type === 'joker' ? 'ジョーカー' : set.types[card.type];
+  ctx.fillText(bandText, x + CW / 2, y + 58);
+  // 数式（収まるよう自動縮小）
+  ctx.fillStyle = '#1d2a35'; ctx.strokeStyle = '#1d2a35';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  let size = 128;
+  while (measureTokens(ctx, card.tokens, size) > CW - 130 && size > 40) size -= 6;
+  const w = measureTokens(ctx, card.tokens, size);
+  const hasFrac = card.tokens.some(t => t.k === 'frac');
+  drawTokens(ctx, card.tokens, x + (CW - w) / 2, y + CH / 2 + size * (hasFrac ? 0.1 : 0.34), size);
+  // 下部：セット名と組番号（先生の仕分け用）
+  ctx.fillStyle = '#8a8a7a';
+  ctx.font = '34px "Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(set.short + '　' + (card.type === 'joker' ? 'ジョーカー' : 'No.' + (groupNo + 1)), x + CW / 2, y + CH - 44);
+  ctx.restore();
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function roundRectTop(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function makePrintPages() {
+  const set = currentSet;
+  const wrap = $('printPages');
+  wrap.innerHTML = '<p class="note">作成中…</p>';
+  let cards = [];
+  set.groups.forEach((g, gi) => {
+    for (const f of set.make(g)) cards.push({ ...f, group: gi });
+  });
+  if (set.id === 'sqrt') cards.push({ type: 'joker', tokens: set.joker.tokens, group: -1 });
+  const perPage = PRINT.COLS * PRINT.ROWS;
+  const pages = Math.ceil(cards.length / perPage);
+  wrap.innerHTML = '';
+  const x0 = (PRINT.W - PRINT.COLS * PRINT.CW) / 2;
+  const y0 = (PRINT.H - PRINT.ROWS * PRINT.CH) / 2;
+  for (let p = 0; p < pages; p++) {
+    const cv = document.createElement('canvas');
+    cv.width = PRINT.W; cv.height = PRINT.H;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, PRINT.W, PRINT.H);
+    const slice = cards.slice(p * perPage, (p + 1) * perPage);
+    slice.forEach((card, i) => {
+      const cx = x0 + (i % PRINT.COLS) * PRINT.CW;
+      const cy = y0 + Math.floor(i / PRINT.COLS) * PRINT.CH;
+      drawCardOnSheet(ctx, card, cx, cy, set, card.group);
+    });
+    const label = document.createElement('p');
+    label.className = 'note';
+    label.textContent = set.name + ' ― シート ' + (p + 1) + ' / ' + pages + '（この画像を長押しして保存し、A4・実際のサイズで印刷）';
+    wrap.appendChild(label);
+    const img = document.createElement('img');
+    img.alt = label.textContent;
+    img.src = cv.toDataURL('image/png');
+    wrap.appendChild(img);
+  }
+}
+
+/* ================================================================
+   画面の配線
+   ================================================================ */
+function quitAll() {
+  Mem.quit(); Baba.quit(); Flash.quit();
+  stopTimer();
+  show(returnTo === 'game' ? 'home' : 'home');
+}
+function askDifficulty(vsCpu) {
+  const set = currentSet;
+  const total = set.groups.length;
+  const opts = [
+    { label: 'かんたん（6組）', n: 6 },
+    { label: 'ふつう（10組）', n: 10 },
+    { label: 'むずかしい（全' + total + '組）', n: total },
+  ].filter(o => o.n <= total);
+  const boardMsg = '組数を選んでください： ' + opts.map((o, i) => '<button class="gbtn" data-d="' + o.n + '">' + o.label + '</button>').join(' ');
+  openGame('神経衰弱' + (vsCpu ? '・対戦' : '（ソロ）') + ' ― ' + set.name);
+  setMsg(boardMsg);
+  $('gameMsg').querySelectorAll('[data-d]').forEach(b => {
+    b.addEventListener('click', () => { SoundBox.click(); Mem.start(vsCpu, parseInt(b.dataset.d, 10)); });
+  });
+}
+
+function wire() {
+  renderSetGrid();
+  renderRecords();
+  $('btnMemorySolo').addEventListener('click', () => { SoundBox.ensure(); askDifficulty(false); });
+  $('btnMemoryCpu').addEventListener('click', () => { SoundBox.ensure(); askDifficulty(true); });
+  $('btnBaba').addEventListener('click', () => { SoundBox.ensure(); Baba.start(); });
+  $('btnFlash').addEventListener('click', () => { SoundBox.ensure(); Flash.start(); });
+  $('btnTable').addEventListener('click', () => { SoundBox.click(); returnTo = 'home'; renderTable(); show('table'); });
+  $('btnPeek').addEventListener('click', () => { SoundBox.click(); returnTo = 'game'; renderTable(); show('table'); });
+  $('btnTableBack').addEventListener('click', () => { SoundBox.click(); show(returnTo === 'game' && (Mem.active || Baba.active || Flash.active) ? 'game' : 'home'); });
+  $('btnPrint').addEventListener('click', () => { SoundBox.click(); $('printPages').innerHTML = ''; show('print'); });
+  $('btnMakePrint').addEventListener('click', () => { SoundBox.click(); makePrintPages(); });
+  $('btnPrintBack').addEventListener('click', () => { SoundBox.click(); show('home'); });
+  $('btnAbout').addEventListener('click', () => { SoundBox.click(); show('about'); });
+  $('btnAboutBack').addEventListener('click', () => { SoundBox.click(); show('home'); });
+  $('btnQuit').addEventListener('click', () => { SoundBox.click(); quitAll(); });
+  $('btnSound').addEventListener('click', () => {
+    SoundBox.on = !SoundBox.on;
+    localStorage.setItem('murisuu_sound', SoundBox.on ? '1' : '0');
+    $('btnSound').textContent = SoundBox.on ? '🔊 音：オン' : '🔇 音：オフ';
+    if (SoundBox.on) SoundBox.good();
+  });
+  $('btnSound').textContent = SoundBox.on ? '🔊 音：オン' : '🔇 音：オフ';
+}
+document.addEventListener('DOMContentLoaded', wire);
+</script>
+</body>
+</html>
