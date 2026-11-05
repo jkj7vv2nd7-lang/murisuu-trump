@@ -268,12 +268,16 @@
         <button class="subbtn" id="btnPrintBack">← もどる</button>
       </div>
       <h3>一気に印刷する（PC・iPhone）</h3>
-      <p class="note">シート画像をA4ちょうどに並べた印刷ビューから、そのまま印刷できます。各シートがA4・1ページにぴったり収まります。PCは印刷ダイアログが開きます。iPhoneでは印刷の画面（共有シート経由の「プリント」でも可）から、全シートをまとめて印刷できます。プリンター側の設定は「A4・実際のサイズ（100%）」でどうぞ。下の画像を長押しして保存する方法も、今までどおり使えます。</p>
+      <p class="note">シート画像をA4ちょうどに並べた印刷ビューから印刷できます。各シートがA4・1ページにぴったり収まります。ボタンを押すとまずシートを準備し、準備ができたら「印刷する」ボタンが出ます。そのボタンを押すと印刷画面が開きます（iPhoneの仕様に合わせた2段階の形です）。プリンター側の設定は「A4・実際のサイズ（100%）」でどうぞ。下の画像を長押しして保存する方法も、今までどおり使えます。</p>
       <div class="subrow">
         <button class="subbtn" id="btnPrintSetNow">🖨 このセットを全部印刷</button>
         <button class="subbtn" id="btnPrintAllSets">🖨 全セットを一括印刷（62ページ）</button>
       </div>
       <p class="note" id="printProgress"></p>
+      <div class="subrow hidden" id="printReadyBar">
+        <button class="subbtn" id="btnPrintNow" style="background:#2e7d5b;border-color:#2e7d5b;color:#fff;font-weight:bold;font-size:1rem;padding:10px 22px;">🖨 印刷する</button>
+        <span class="note" id="printReadyNote"></span>
+      </div>
       <div class="printpages" id="printPages"></div>
     </div>
   </section>
@@ -1661,32 +1665,46 @@ async function makePrintPages() {
   }
 }
 
-/* PC向け：シート画像を A4 ちょうどの印刷ビューに並べて印刷ダイアログを開く */
+/* シート画像を A4 ちょうどの印刷ビューに並べる（生成まで）。
+   印刷そのものは、利用者のタップから直接呼ぶ必要がある（iOS の仕様で、
+   非同期処理の後の window.print() は「自動印刷」と判定され禁止ダイアログが出る）。
+   そのため生成完了後に「印刷する」ボタンを出し、そのタップで print を呼ぶ。 */
 async function printSets(sets) {
   const prog = $('printProgress');
   const area = $('printArea');
+  const bar = $('printReadyBar');
+  if (bar) bar.classList.add('hidden');
   area.innerHTML = '';
   let total = 0;
-  for (const set of sets) {
-    const sheets = buildSheetImages(set);
-    for (const sh of sheets) {
-      const pageDiv = document.createElement('div');
-      pageDiv.className = 'sheetpage';
-      const img = document.createElement('img');
-      img.className = 'sheetimg';
-      img.src = sh.dataUrl;
-      img.alt = sh.label;
-      pageDiv.appendChild(img);
-      area.appendChild(pageDiv);
-      total++;
+  try {
+    for (const set of sets) {
+      const pages = Math.ceil(buildSheetCards(set).length / (PRINT.COLS * PRINT.ROWS));
+      for (let p = 0; p < pages; p++) {
+        const sh = buildSheetImageAt(set, p);
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'sheetpage';
+        const img = document.createElement('img');
+        img.className = 'sheetimg';
+        img.src = sh.dataUrl;
+        img.alt = sh.label;
+        pageDiv.appendChild(img);
+        area.appendChild(pageDiv);
+        total++;
+        if (prog) prog.textContent = '印刷用シートを作成中… ' + total + ' ページ';
+        await wait(30);
+      }
     }
-    if (prog) prog.textContent = '印刷用シートを作成中… ' + total + ' ページ';
-    await wait(30);
+    await Promise.all([...area.querySelectorAll('img')].map(im =>
+      im.complete && im.naturalWidth ? Promise.resolve() : new Promise(r => { im.onload = r; im.onerror = r; })));
+    if (prog) prog.textContent = total + ' ページの準備ができました。下の「印刷する」ボタンを押してください。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
+    if (bar) {
+      $('printReadyNote').textContent = '全 ' + total + ' ページ';
+      bar.classList.remove('hidden');
+      bar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  } catch (e) {
+    if (prog) prog.textContent = 'シートを作成できませんでした。もう一度お試しください。（' + (e && e.message ? e.message : e) + '）';
   }
-  await Promise.all([...area.querySelectorAll('img')].map(im =>
-    im.complete && im.naturalWidth ? Promise.resolve() : new Promise(r => { im.onload = r; im.onerror = r; })));
-  if (prog) prog.textContent = total + ' ページの印刷ダイアログを開きます。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
-  window.print();
 }
 
 /* ================================================================
@@ -1723,10 +1741,12 @@ function wire() {
   $('btnTable').addEventListener('click', () => { SoundBox.click(); returnTo = 'home'; renderTable(); show('table'); });
   $('btnPeek').addEventListener('click', () => { SoundBox.click(); returnTo = 'game'; renderTable(); show('table'); });
   $('btnTableBack').addEventListener('click', () => { SoundBox.click(); show(returnTo === 'game' && (Mem.active || Baba.active || Flash.active) ? 'game' : 'home'); });
-  $('btnPrint').addEventListener('click', () => { SoundBox.click(); $('printPages').innerHTML = ''; show('print'); });
+  $('btnPrint').addEventListener('click', () => { SoundBox.click(); $('printPages').innerHTML = ''; $('printProgress').textContent = ''; $('printReadyBar').classList.add('hidden'); show('print'); });
   $('btnMakePrint').addEventListener('click', () => { SoundBox.click(); makePrintPages(); });
   $('btnPrintSetNow').addEventListener('click', () => { SoundBox.click(); printSets([currentSet]); });
   $('btnPrintAllSets').addEventListener('click', () => { SoundBox.click(); printSets(SETS); });
+  // 印刷はタップのハンドラから直接呼ぶ（iOS の自動印刷ブロックを避けるため、必ず先頭で）
+  $('btnPrintNow').addEventListener('click', () => { window.print(); SoundBox.click(); });
   $('btnPrintBack').addEventListener('click', () => { SoundBox.click(); show('home'); });
   $('btnAbout').addEventListener('click', () => { SoundBox.click(); show('about'); });
   $('btnAboutBack').addEventListener('click', () => { SoundBox.click(); show('home'); });
