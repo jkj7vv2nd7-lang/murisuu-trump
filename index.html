@@ -268,13 +268,14 @@
         <button class="subbtn" id="btnPrintBack">← もどる</button>
       </div>
       <h3>一気に印刷する（PC・iPhone）</h3>
-      <p class="note">ボタンを押すと、印刷用PDFを作ります（全セットの場合は、セットごとのPDFリンクが並びます）。準備ができたら「PDFを開く」ボタンを押してPDFを表示してください。PDFが開いたら、画面を一度タップしてバーを出し、共有ボタン（四角に上向き矢印のマーク）を押して、出てきたメニューの「プリント」を選んでください（PCでは印刷ボタンから印刷できます）。PDFなので、ページがずれたり白紙が入ったりしません。プリンター側の設定は「A4・実際のサイズ（100%）」でどうぞ。下の画像を長押しして保存する方法も、今までどおり使えます。</p>
+      <p class="note">ボタンを押すと、印刷用PDFを作ります（全セットの場合は、セットごとのPDFリンクが並びます）。PDFを開いてもバーが出ないときは、アプリ内の「共有する」ボタンから共有シートを直接開けます（その中の「プリント」から印刷できます）。準備ができたら「PDFを開く」ボタンを押してPDFを表示してください。PDFが開いたら、画面を一度タップしてバーを出し、共有ボタン（四角に上向き矢印のマーク）を押して、出てきたメニューの「プリント」を選んでください（PCでは印刷ボタンから印刷できます）。PDFなので、ページがずれたり白紙が入ったりしません。プリンター側の設定は「A4・実際のサイズ（100%）」でどうぞ。下の画像を長押しして保存する方法も、今までどおり使えます。</p>
       <div class="subrow">
         <button class="subbtn" id="btnPrintSetNow">🖨 このセットを全部印刷</button>
         <button class="subbtn" id="btnPrintAllSets">🖨 全セットを一括印刷（62ページ）</button>
       </div>
       <p class="note" id="printProgress"></p>
       <div class="subrow hidden" id="printReadyBar" style="flex-wrap:wrap;">
+        <button class="subbtn hidden" id="btnSharePdf" style="background:#2e7d5b;border-color:#2e7d5b;color:#fff;font-weight:bold;font-size:1rem;padding:10px 22px;">📤 共有する（印刷もここから）</button>
         <a class="subbtn" id="btnOpenPdf" href="#" download="murisuu-trump-sheets.pdf" style="background:#2e7d5b;border-color:#2e7d5b;color:#fff;font-weight:bold;font-size:1rem;padding:10px 22px;text-decoration:none;">📄 PDFを開く</a>
         <span class="note" id="printReadyNote"></span>
         <div id="pdfLinkList" class="hidden" style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;"></div>
@@ -1725,6 +1726,21 @@ function buildPdfBlob(pages) {
 }
 
 let currentPdfUrls = [];
+let currentPdfMade = [];
+/* Web Share API（ファイル共有）が使えるか */
+function canSharePdfFiles() {
+  try {
+    return !!(navigator.canShare && navigator.canShare({ files: [new File(['x'], 't.pdf', { type: 'application/pdf' })] }));
+  } catch (e) { return false; }
+}
+/* 共有シートを直接開く（PDF 表示画面のバーに依存しない印刷経路） */
+function sharePdfFile(file) {
+  if (!file) return;
+  try {
+    const p = navigator.share({ files: [file] });
+    if (p && p.catch) p.catch(() => {});
+  } catch (e) { /* 共有できない環境では何もしない（開くボタンが代替） */ }
+}
 let makingPdf = false;
 /* sets の各セットごとに PDF を作る。1ファイルが大きいとブラウザが開けない
    場合があるため、全セット一括でも「セットごとの PDF リンク」を並べる形にする。 */
@@ -1735,6 +1751,8 @@ async function makePrintPdf(sets) {
   const bar = $('printReadyBar');
   const list = $('pdfLinkList');
   const single = $('btnOpenPdf');
+  const shareBtn = $('btnSharePdf');
+  if (shareBtn) shareBtn.classList.add('hidden');
   if (bar) bar.classList.add('hidden');
   if (list) { list.innerHTML = ''; list.classList.add('hidden'); }
   try {
@@ -1754,16 +1772,22 @@ async function makePrintPdf(sets) {
         await wait(30);
       }
       const blob = buildPdfBlob(pages);
-      made.push({ set, pages: cnt, size: blob.size, url: URL.createObjectURL(blob) });
+      const file = new File([blob], 'murisuu-trump-' + set.id + '.pdf', { type: 'application/pdf' });
+      made.push({ set, pages: cnt, size: blob.size, url: URL.createObjectURL(blob), file });
     }
     for (const u of currentPdfUrls) URL.revokeObjectURL(u);
     currentPdfUrls = made.map(m => m.url);
+    currentPdfMade = made;
+    const shareable = canSharePdfFiles();
     if (made.length === 1) {
       const m = made[0];
       single.href = m.url;
       single.classList.remove('hidden');
+      if (shareable && shareBtn) shareBtn.classList.remove('hidden');
       $('printReadyNote').textContent = '全 ' + m.pages + ' ページ（' + Math.max(1, Math.round(m.size / 1024)) + ' KB）';
-      if (prog) prog.textContent = 'PDFの準備ができました。下の「PDFを開く」ボタンを押してPDFを表示してください。PDFが開いたら、画面を一度タップしてバーを出し、共有ボタン（四角に上向き矢印のマーク）を押して、出てきたメニューの「プリント」を選んでください。（PCでは印刷ボタンから印刷できます）ページがずれたり白紙が入ったりしません。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
+      if (prog) prog.textContent = shareable
+        ? 'PDFの準備ができました。「共有する」ボタンを押すと共有シートが開くので、その中の「プリント」を選んでください（PDFを開かなくても印刷できます）。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。'
+        : 'PDFの準備ができました。下の「PDFを開く」ボタンを押してPDFを表示してください。' + 'PDFが開いたら、画面を一度タップしてバーを出し、共有ボタン（四角に上向き矢印のマーク）を押して、出てきたメニューの「プリント」を選んでください。（PCでは印刷ボタンから印刷できます）ページがずれたり白紙が入ったりしません。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
     } else {
       single.classList.add('hidden');
       for (const m of made) {
@@ -1774,10 +1798,20 @@ async function makePrintPdf(sets) {
         a.style.cssText = 'background:#2e7d5b;border-color:#2e7d5b;color:#fff;font-weight:bold;text-decoration:none;';
         a.textContent = '📄 ' + m.set.name + '（' + m.pages + 'ページ）';
         list.appendChild(a);
+        if (shareable) {
+          const sb = document.createElement('button');
+          sb.className = 'subbtn share-set-btn';
+          sb.style.cssText = 'background:#fff;border-color:#2e7d5b;color:#2e7d5b;font-weight:bold;';
+          sb.textContent = '📤 共有';
+          sb.addEventListener('click', () => { SoundBox.click(); sharePdfFile(m.file); });
+          list.appendChild(sb);
+        }
       }
       list.classList.remove('hidden');
       $('printReadyNote').textContent = '全 ' + made.reduce((s, m) => s + m.pages, 0) + ' ページ・' + made.length + 'セット分';
-      if (prog) prog.textContent = 'PDFの準備ができました。セットごとに分かれたPDFのリンクが下に並んでいます。開きたいセットのリンクを押してPDFを表示してください。PDFが開いたら、画面を一度タップしてバーを出し、共有ボタン（四角に上向き矢印のマーク）を押して、出てきたメニューの「プリント」を選んでください。（PCでは印刷ボタンから印刷できます）プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
+      if (prog) prog.textContent = shareable
+        ? 'PDFの準備ができました。各セットの「共有」ボタンを押すと共有シートが開くので、その中の「プリント」を選んでください（PDFを開かなくても印刷できます）。プリンター側は「A4・実際のサイズ（100%）」でどうぞ。'
+        : 'PDFの準備ができました。セットごとに分かれたPDFのリンクが下に並んでいます。開きたいセットのリンクを押してPDFを表示してください。' + 'PDFが開いたら、画面を一度タップしてバーを出し、共有ボタン（四角に上向き矢印のマーク）を押して、出てきたメニューの「プリント」を選んでください。（PCでは印刷ボタンから印刷できます）プリンター側は「A4・実際のサイズ（100%）」でどうぞ。';
     }
     bar.classList.remove('hidden');
     bar.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1827,6 +1861,7 @@ function wire() {
   $('btnPrintSetNow').addEventListener('click', () => { SoundBox.click(); makePrintPdf([currentSet]); });
   $('btnPrintAllSets').addEventListener('click', () => { SoundBox.click(); makePrintPdf(SETS); });
   $('btnOpenPdf').addEventListener('click', (e) => { if (!currentPdfUrls.length) { e.preventDefault(); return; } SoundBox.click(); });
+  $('btnSharePdf').addEventListener('click', () => { SoundBox.click(); if (currentPdfMade.length === 1) sharePdfFile(currentPdfMade[0].file); });
   $('btnPrintBack').addEventListener('click', () => { SoundBox.click(); show('home'); });
   $('btnAbout').addEventListener('click', () => { SoundBox.click(); show('about'); });
   $('btnAboutBack').addEventListener('click', () => { SoundBox.click(); show('home'); });
