@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>選べる数学カード「無理数トランプ」</title>
+<title>Math Quartet ― 4枚そろえる数学カード</title>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <style>
@@ -133,6 +133,10 @@
   .frac-n{border-bottom:.09em solid currentColor;padding:0 .28em;line-height:1.18;}
   .frac-d{padding:0 .28em;line-height:1.18;}
   sup{font-size:.62em;}
+  .sys{display:inline-flex;align-items:center;}
+  .sys-brace{width:.34em;height:1.9em;margin-right:.1em;flex:none;}
+  .sys-lines{display:inline-flex;flex-direction:column;}
+  .sys-line{line-height:1.3;text-align:left;white-space:nowrap;}
   .minitable{border-collapse:collapse;font-size:.6em;line-height:1.2;}
   .minitable th,.minitable td{border:1px solid #8a97a5;padding:1px 4px;text-align:center;font-family:inherit;background:#fff;}
   .minitable th{color:#42525f;font-weight:normal;}
@@ -200,8 +204,8 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <h1>選べる数学カード<span style="color:#f4c542">「無理数トランプ」</span>
-      <span class="sub">同じ数の「ちがう表し方」をそろえるカードゲーム ― 6つの単元から選べます</span>
+    <h1>Math Quartet<span style="color:#f4c542"> ― 4枚そろえる数学カード</span>
+      <span class="sub">同じ対象の「ちがう表し方」を4枚そろえるカードゲーム ― 13の単元セットから選べます</span>
     </h1>
   </header>
 
@@ -271,7 +275,7 @@
       <p class="note">ボタンを押すと、印刷用PDFを作ります（全セットの場合は、セットごとのPDFリンクが並びます）。PDFを開いてもバーが出ないときは、アプリ内の「共有する」ボタンから共有シートを直接開けます（その中の「プリント」から印刷できます）。準備ができたら「PDFを開く」ボタンを押してPDFを表示してください。PDFが開いたら、画面を一度タップしてバーを出し、共有ボタン（四角に上向き矢印のマーク）を押して、出てきたメニューの「プリント」を選んでください（PCでは印刷ボタンから印刷できます）。PDFなので、ページがずれたり白紙が入ったりしません。プリンター側の設定は「A4・実際のサイズ（100%）」でどうぞ。下の画像を長押しして保存する方法も、今までどおり使えます。</p>
       <div class="subrow">
         <button class="subbtn" id="btnPrintSetNow">🖨 このセットを全部印刷</button>
-        <button class="subbtn" id="btnPrintAllSets">🖨 全セットを一括印刷（62ページ）</button>
+        <button class="subbtn" id="btnPrintAllSets">🖨 全セットを一括印刷（93ページ）</button>
       </div>
       <p class="note" id="printProgress"></p>
       <div class="subrow hidden" id="printReadyBar" style="flex-wrap:wrap;">
@@ -291,7 +295,7 @@
       <ul>
         <li><b>神経衰弱</b>：カードを1枚ずつめくり、最初にめくったカードと<b>同じ組</b>のカードを続けてめくれたら、そのまま続けられます。4枚そろうと1組ゲット。違う組をめくったら、その回にめくったカードは全部戻り、手番が終わります。組数は かんたん（6組）／ふつう（10組）／むずかしい（全組）から選べます。</li>
         <li><b>ババぬき</b>：手札から4枚1組がそろったら捨てられます。次の人のカードを1枚引いて、手札を空にした人から上がり。平方根セットでは「√0」がジョーカー（ババ）。ほかのセットでは、どれか1組のカードを1枚だけ残して抜いてある「ジジぬき」方式で、残った1枚が最後まで残ります。</li>
-        <li><b>カードの小さな字</b>：因数分解セットの「解」は、展開形の式を 0 とおいた方程式（式＝0）の解です。カードにも「式＝0 の解」と小さく書いてあります。一次方程式セットの「解」は方程式の解、「検算式」は解を方程式に代入した計算で、こちらもカードに小さく書いてあります。</li>
+        <li><b>カードの小さな字</b>：因数分解セットの「解」は、展開形の式を 0 とおいた方程式（式＝0）の解です。カードにも「式＝0 の解」と小さく書いてあります。一次方程式セットの「解」は方程式の解、「検算式」は解を方程式に代入した計算で、こちらもカードに小さく書いてあります。連立方程式セットの「交点」は2直線の交わる点の座標、円・相似比・式の値セットでは、数字だけでは意味が伝わりにくいカードにも小さな字で意味が書いてあります。</li>
         <li><b>フラッシュ練習</b>：見本のカードと同じ組のカードを3枚、候補の中からすばやくタップ。まちがえると＋2秒のペナルティ。5ラウンドの合計タイムを競います。</li>
       </ul>
       <h2>このアプリの生まれ</h2>
@@ -300,7 +304,7 @@
         <li><b>4つの表現＝4色</b>：等しい値になる4枚は、表現ごとに色を分ける方が分かりやすい、というのが当時からの工夫です。このアプリでも、4つの表現は色で区別しています。</li>
         <li><b>一覧表の足場かけ</b>：初期は値の一覧表を配って参照しながら遊び、慣れたら表なしで瞬間的に反応できる訓練へ――という段階づけも、当時の実践そのままです。</li>
         <li><b>カードの大きさ</b>：印刷用カードは、当時生徒が作った厚紙カードと同じ、縦9cm×横7cmです。</li>
-        <li><b>セットの広がり</b>：「同じ対象の違う表し方をそろえる」仕組みは、割合・累乗・一次方程式・因数分解・一次関数にも広げられるはず、という発想で、6セットを用意しました。一次関数セットの4表現（式・表・グラフ・言葉）は、啓林館の授業実践記録にある「1次関数トランプ」の構成を踏まえたもので、表の数値もグラフも、すべて式から計算・描画しています。カードの数値例はこのアプリのために新たに作り、全ての組について「4つの表現が本当に等しいこと」「ほかの組と取り違えないこと」を、プログラムで機械的に検算しています。</li>
+        <li><b>セットの広がり</b>：「同じ対象の違う表し方をそろえる」仕組みは、割合・累乗・一次方程式・因数分解・一次関数にも広げられるはず、という発想で、まず6セットを用意しました。第2弾では、比例・反比例、連立方程式、素因数分解、三平方の定理、円、相似比、式の値の7セットを加え、全13セットになりました。一次関数セットの4表現（式・表・グラフ・言葉）は、啓林館の授業実践記録にある「1次関数トランプ」の構成を踏まえたもので、表の数値もグラフも、すべて式から計算・描画しています。カードの数値例はこのアプリのために新たに作り、全ての組について「4つの表現が本当に等しいこと」「ほかの組と取り違えないこと」を、プログラムで機械的に検算しています。</li>
       </ul>
       <div class="subrow"><button class="subbtn" id="btnAboutBack">← もどる</button></div>
     </div>
@@ -323,6 +327,7 @@ const FRAC = (n, d) => ({ k: 'frac', n, d });
 const SUP = (b, e) => ({ k: 'sup', b, e: String(e) });
 
 const TABLE = (xs, ys) => ({ k: 'table', xs, ys });
+const SYS = lines => ({ k: 'sys', lines });
 const GRAPH = (aN, aD, b) => ({ k: 'graph', aN, aD, b });
 
 const TYPE_COLORS = ['#cf3f38', '#2470a0', '#1e8449', '#7d3c98'];
@@ -473,6 +478,100 @@ function funcCards(g) {
   ];
 }
 
+/* ---------- 比例・反比例セット：組は {kind:'p'|'i', k, sent} ---------- */
+function propCards(g) {
+  const { kind, k } = g;
+  const coef = k < 0 ? [T('−'), T(-k)] : [T(k)];
+  const f1 = kind === 'p'
+    ? [V('y'), T('='), ...coef, V('x')]
+    : [V('y'), T('='), FRAC([T(k)], [V('x')])];
+  const xs = [1, 2, 3];
+  const ys = kind === 'p' ? xs.map(x => k * x) : xs.map(x => k / x);
+  const f2 = [TABLE(xs.map(x => [T(x)]), ys.map(y => [T(fmtN(y))]))];
+  const f3 = kind === 'p'
+    ? [T('原点を通る直線で、点（1, ' + fmtN(k) + '）を通る')]
+    : [T('双曲線で、点（1, ' + k + '）を通る')];
+  return [
+    { type: 0, tokens: f1 },
+    { type: 1, tokens: f2 },
+    { type: 2, tokens: f3 },
+    { type: 3, tokens: g.sent },
+  ];
+}
+
+/* ---------- 連立方程式セット：組は {a1,b1,c1, a2,b2,c2, x, y, sent} ---------- */
+function linEqToks(a, b, c) {
+  const out = [];
+  if (a === 1) out.push(V('x'));
+  else if (a === -1) out.push(T('−'), V('x'));
+  else out.push(T(a), V('x'));
+  if (b > 0) { out.push(T('+')); if (b !== 1) out.push(T(b)); out.push(V('y')); }
+  else if (b < 0) { out.push(T('−')); if (b !== -1) out.push(T(-b)); out.push(V('y')); }
+  out.push(T('='), T(fmtN(c)));
+  return out;
+}
+function simulCards(g) {
+  return [
+    { type: 0, tokens: [SYS([linEqToks(g.a1, g.b1, g.c1), linEqToks(g.a2, g.b2, g.c2)])] },
+    { type: 1, tokens: [V('x'), T('='), T(g.x), T(', '), V('y'), T('='), T(g.y)] },
+    { type: 2, tokens: [T('（'), T(g.x), T(', '), T(g.y), T('）')] },
+    { type: 3, tokens: g.sent },
+  ];
+}
+
+/* ---------- 素因数分解セット：組は {n, f:[素因数...], e:[[底,指数]...], d} ---------- */
+function primeCards(g) {
+  const joinMul = parts => parts.reduce((acc, p, i) => (i === 0 ? [...p] : [...acc, T('×'), ...p]), []);
+  return [
+    { type: 0, tokens: [T(g.n)] },
+    { type: 1, tokens: joinMul(g.f.map(p => [T(p)])) },
+    { type: 2, tokens: joinMul(g.e.map(([b, e]) => (e === 1 ? [T(b)] : [SUP([T(b)], e)]))) },
+    { type: 3, tokens: [T(g.d), T('個')] },
+  ];
+}
+
+/* ---------- 三平方の定理セット：組は {a, b, c, sent} ---------- */
+function pythCards(g) {
+  return [
+    { type: 0, tokens: [T(g.a), T(' と '), T(g.b)] },
+    { type: 1, tokens: [RAD([SUP([T(g.a)], 2), T('+'), SUP([T(g.b)], 2)])] },
+    { type: 2, tokens: [T(g.c)] },
+    { type: 3, tokens: [T(g.sent)] },
+  ];
+}
+
+/* ---------- 円セット：組は {r}（円周率は 3.14） ---------- */
+function circleNum(v) { return String(Math.round(v * 100) / 100); }
+function circleCards(g) {
+  const r = g.r;
+  return [
+    { type: 0, tokens: [T(r), T(' cm')] },
+    { type: 1, tokens: [T(2 * r), T(' cm')] },
+    { type: 2, tokens: [T(circleNum(2 * 3.14 * r)), T(' cm')] },
+    { type: 3, tokens: [T(circleNum(3.14 * r * r)), T(' '), SUP([T('cm')], 2)] },
+  ];
+}
+
+/* ---------- 相似比セット：組は {a, b, s1, s2}（相似比 a:b、辺 s1→s2） ---------- */
+function simratioCards(g) {
+  return [
+    { type: 0, tokens: [T(g.a + '：' + g.b)] },
+    { type: 1, tokens: [T(g.s1), T(' cm → '), T(g.s2), T(' cm')] },
+    { type: 2, tokens: [T((g.a * g.a) + '：' + (g.b * g.b))] },
+    { type: 3, tokens: [T((g.a ** 3) + '：' + (g.b ** 3))] },
+  ];
+}
+
+/* ---------- 式の値セット：組は {vn, cond, expr, words, sub, val} ---------- */
+function substCards(g) {
+  return [
+    { type: 0, tokens: [...g.expr, T('（'), V(g.vn), T('='), T(g.cond), T('）')] },
+    { type: 1, tokens: g.words },
+    { type: 2, tokens: g.sub },
+    { type: 3, tokens: [T(g.val)] },
+  ];
+}
+
 const SETS = [
   {
     id: 'sqrt', name: '平方根セット', grade: '中3', short: '平方根',
@@ -567,6 +666,101 @@ const SETS = [
       { aN: 3, aD: 2, b: -1 },
     ],
   },
+  {
+    id: 'prop', name: '比例・反比例セット', grade: '中1', short: '比例・反比例',
+    types: ['式', '表', 'グラフの言葉', '文章'],
+    make: propCards,
+    groups: [
+      { kind: 'p', k: 4, sent: [T('1 m の重さが 4 g の針金 '), V('x'), T(' m の重さ '), V('y'), T(' g')] },
+      { kind: 'p', k: -2, sent: [T('0℃から毎分2℃ずつ下がるとき、'), V('x'), T(' 分後の温度の変化 '), V('y'), T(' ℃')] },
+      { kind: 'p', k: 60, sent: [T('分速 60 m で '), V('x'), T(' 分間に進む道のり '), V('y'), T(' m')] },
+      { kind: 'p', k: 100, sent: [T('100円玉 '), V('x'), T(' 枚の金額 '), V('y'), T(' 円')] },
+      { kind: 'i', k: 12, sent: [T('面積 12 '), SUP([T('cm')], 2), T(' の長方形の縦 '), V('x'), T(' cm、横 '), V('y'), T(' cm')] },
+      { kind: 'i', k: 24, sent: [T('24 km の道のりを時速 '), V('x'), T(' km で進むときにかかる時間 '), V('y'), T(' 時間')] },
+      { kind: 'i', k: 6, sent: [T('6 L の水を '), V('x'), T(' 人で等しく分けたときの1人分 '), V('y'), T(' L')] },
+      { kind: 'i', k: 18, sent: [T('あめ 18 個を '), V('x'), T(' 人で等しく分けたときの1人分 '), V('y'), T(' 個')] },
+    ],
+  },
+  {
+    id: 'simul', name: '連立方程式セット', grade: '中2', short: '連立方程式',
+    types: ['連立方程式', '解', '交点', '文章'],
+    subs: { 1: '連立方程式の解', 2: 'グラフの交点' },
+    note: '「交点」は、2つの式のグラフ（2直線）が交わる点の座標です。',
+    make: simulCards,
+    groups: [
+      { a1: 1, b1: 1, c1: 10, a2: 1, b2: -1, c2: 4, x: 7, y: 3, sent: [T('りんご '), V('x'), T(' 個とみかん '), V('y'), T(' 個で合わせて10個。りんごはみかんより4個多い')] },
+      { a1: 1, b1: 1, c1: 15, a2: 2, b2: 1, c2: 24, x: 9, y: 6, sent: [T('大きい数 '), V('x'), T(' と小さい数 '), V('y'), T(' の和は15。'), V('x'), T(' の2倍と '), V('y'), T(' の和は24')] },
+      { a1: 1, b1: 2, c1: 7, a2: 2, b2: -1, c2: 4, x: 3, y: 2, sent: [V('x'), T(' に '), V('y'), T(' の2倍を加えると7。'), V('x'), T(' の2倍から '), V('y'), T(' を引くと4')] },
+      { a1: 1, b1: -1, c1: 5, a2: 3, b2: 2, c2: 20, x: 6, y: 1, sent: [T('2つの数の差は5。大きい方の3倍と小さい方の2倍の和は20')] },
+      { a1: 2, b1: 3, c1: 19, a2: 1, b2: -1, c2: -3, x: 2, y: 5, sent: [V('y'), T(' は '), V('x'), T(' より3大きい。'), V('x'), T(' の2倍と '), V('y'), T(' の3倍の和は19')] },
+      { a1: 3, b1: 1, c1: 14, a2: 1, b2: 3, c2: 10, x: 4, y: 2, sent: [V('x'), T(' の3倍と '), V('y'), T(' の和は14。'), V('x'), T(' と '), V('y'), T(' の3倍の和は10')] },
+    ],
+  },
+  {
+    id: 'prime', name: '素因数分解セット', grade: '中1', short: '素因数分解',
+    types: ['数', '素数の積', '指数の形', '約数の個数'],
+    make: primeCards,
+    groups: [
+      { n: 24, f: [2, 2, 2, 3], e: [[2, 3], [3, 1]], d: 8 },
+      { n: 36, f: [2, 2, 3, 3], e: [[2, 2], [3, 2]], d: 9 },
+      { n: 48, f: [2, 2, 2, 2, 3], e: [[2, 4], [3, 1]], d: 10 },
+      { n: 64, f: [2, 2, 2, 2, 2, 2], e: [[2, 6]], d: 7 },
+      { n: 96, f: [2, 2, 2, 2, 2, 3], e: [[2, 5], [3, 1]], d: 12 },
+      { n: 144, f: [2, 2, 2, 2, 3, 3], e: [[2, 4], [3, 2]], d: 15 },
+    ],
+  },
+  {
+    id: 'pyth', name: '三平方の定理セット', grade: '中3', short: '三平方',
+    types: ['直角をはさむ2辺', '計算式', '斜辺の長さ', '文章'],
+    subs: { 1: '斜辺を求める式' },
+    make: pythCards,
+    groups: [
+      { a: 3, b: 4, c: 5, sent: '高さ 3 m の壁に立てかけたはしご。足元は壁から 4 m' },
+      { a: 6, b: 8, c: 10, sent: '縦 6 m、横 8 m の長方形の対角線' },
+      { a: 5, b: 12, c: 13, sent: '東へ 5 km、北へ 12 km 進んだ地点と出発点との直線距離' },
+      { a: 8, b: 15, c: 17, sent: '縦 8 cm、横 15 cm の長方形の対角線' },
+      { a: 9, b: 12, c: 15, sent: '高さ 9 m の木の影の長さが 12 m。木のてっぺんから影の先までの距離' },
+      { a: 7, b: 24, c: 25, sent: '縦 7 m、横 24 m の長方形の対角線' },
+      { a: 20, b: 21, c: 29, sent: '20 m と 21 m の2辺が直角を挟む直角三角形の斜辺' },
+    ],
+  },
+  {
+    id: 'circle', name: '円セット', grade: '中1', short: '円',
+    types: ['半径', '直径', '円周', '面積'],
+    subs: { 0: '半径', 1: '直径', 2: '円周の長さ', 3: '面積' },
+    note: '円周率は 3.14 として計算しています。',
+    make: circleCards,
+    groups: [
+      { r: 1 }, { r: 3 }, { r: 4 }, { r: 5 }, { r: 6 }, { r: 10 },
+    ],
+  },
+  {
+    id: 'simratio', name: '相似比セット', grade: '中3', short: '相似比',
+    types: ['相似比', '対応する辺', '面積比', '体積比'],
+    subs: { 1: '対応する辺の長さ', 2: '面積比', 3: '体積比' },
+    make: simratioCards,
+    groups: [
+      { a: 1, b: 2, s1: 3, s2: 6 },
+      { a: 2, b: 3, s1: 4, s2: 6 },
+      { a: 3, b: 4, s1: 6, s2: 8 },
+      { a: 1, b: 3, s1: 2, s2: 6 },
+      { a: 3, b: 5, s1: 9, s2: 15 },
+    ],
+  },
+  {
+    id: 'subst', name: '式の値セット', grade: '中1', short: '式の値',
+    types: ['文字式', '言葉の表現', '代入した式', '値'],
+    subs: { 3: '式の値' },
+    make: substCards,
+    groups: [
+      { vn: 'a', cond: 4, expr: [T(3), V('a'), T('+'), T(2)], words: [V('a'), T(' の3倍に2を加えた数')], sub: [T(3), T('×'), T(4), T('+'), T(2)], val: 14 },
+      { vn: 'x', cond: 6, expr: [T(2), V('x'), T('−'), T(7)], words: [V('x'), T(' の2倍から7を引いた数')], sub: [T(2), T('×'), T(6), T('−'), T(7)], val: 5 },
+      { vn: 'x', cond: 4, expr: [SUP([V('x')], 2), T('+'), T(1)], words: [V('x'), T(' の2乗に1を加えた数')], sub: [SUP([T(4)], 2), T('+'), T(1)], val: 17 },
+      { vn: 'y', cond: 3, expr: [T(10), T('−'), T(2), V('y')], words: [T('10から '), V('y'), T(' の2倍を引いた数')], sub: [T(10), T('−'), T(2), T('×'), T(3)], val: 4 },
+      { vn: 'x', cond: 5, expr: [T(2), T('('), V('x'), T('+'), T(3), T(')')], words: [V('x'), T(' に3を加えた数の2倍')], sub: [T(2), T('×'), T('('), T(5), T('+'), T(3), T(')')], val: 16 },
+      { vn: 'a', cond: 10, expr: [V('a'), T('÷'), T(2), T('+'), T(4)], words: [V('a'), T(' の半分に4を加えた数')], sub: [T(10), T('÷'), T(2), T('+'), T(4)], val: 9 },
+    ],
+  },
 ];
 
 /* 組の「値キー」（検証・記録用）。同じセット内で組どうし重なってはいけない */
@@ -578,6 +772,13 @@ function groupValueKey(set, g) {
     case 'eq': return 'x=' + (g.custom ? g.sol : (g.c - g.b) / g.a);
     case 'factor': { const p = -(g.r[0] + g.r[1]), q = g.r[0] * g.r[1]; return 'p=' + p + ',q=' + q; }
     case 'func': { const gg = gcd2(g.aN, g.aD); return 'a=' + (g.aN / gg) + '/' + (g.aD / gg) + ',b=' + g.b; }
+    case 'prop': return 'k=' + g.kind + g.k;
+    case 'simul': return 'x=' + g.x + ',y=' + g.y;
+    case 'prime': return 'n=' + g.n;
+    case 'pyth': return 'a=' + g.a + ',b=' + g.b;
+    case 'circle': return 'r=' + g.r;
+    case 'simratio': return 'a=' + g.a + ',b=' + g.b;
+    case 'subst': return 'v=' + g.val;
     default: return '';
   }
 }
@@ -611,6 +812,7 @@ function tokensToText(tokens) {
       case 'sup': return tokensToText(tok.b) + '^' + tok.e;
       case 'table': return '表[x:' + tok.xs.map(c => tokensToText(c)).join(',') + '|y:' + tok.ys.map(c => tokensToText(c)).join(',') + ']';
       case 'graph': return 'グラフ(a=' + tok.aN + '/' + tok.aD + ',b=' + tok.b + ')';
+      case 'sys': return '{' + tok.lines.map(l => tokensToText(l)).join('; ') + '}';
       default: return '';
     }
   }).join('');
@@ -647,6 +849,7 @@ function tokensToHTML(tokens) {
           '<tr><th><i class="var">y</i></th>' + tok.ys.map(cell).join('') + '</tr></table>';
       }
       case 'graph': return graphSVG(tok.aN, tok.aD, tok.b);
+      case 'sys': return '<span class="sys"><svg class="sys-brace" viewBox="0 0 45 200" preserveAspectRatio="none" aria-hidden="true"><path d="M40,4 C22,4 20,26 20,52 C20,78 20,92 4,100 C20,108 20,122 20,148 C20,174 22,196 40,196" fill="none" stroke="#1d2a35" stroke-width="8" stroke-linecap="round"/></svg><span class="sys-lines">' + tok.lines.map(l => '<span class="sys-line">' + tokensToHTML(l) + '</span>').join('') + '</span></span>';
       default: return '';
     }
   }).join('');
@@ -1428,6 +1631,11 @@ function measureTokens(ctx, tokens, size) {
         break;
       }
       case 'graph': w += size * 3.0; break;
+      case 'sys': {
+        const s2 = size * 0.8;
+        w += size * 0.42 + size * 0.1 + Math.max(...tok.lines.map(l => measureTokens(ctx, l, s2)));
+        break;
+      }
     }
   }
   return w;
@@ -1500,6 +1708,27 @@ function drawTokens(ctx, tokens, x, yBase, size) {
         }
         ctx.restore();
         cx += totalW;
+        break;
+      }
+      case 'sys': {
+        const s2 = size * 0.8;
+        const lw = Math.max(...tok.lines.map(l => measureTokens(ctx, l, s2)));
+        const bw = size * 0.42;
+        const top = yBase - size * 0.95, bot = yBase + size * 0.78, midY = (top + bot) / 2;
+        ctx.save();
+        ctx.strokeStyle = '#1d2a35'; ctx.lineWidth = Math.max(2, size * 0.05); ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(cx + bw * 0.92, top);
+        ctx.bezierCurveTo(cx + bw * 0.25, top, cx + bw * 0.25, midY - size * 0.42, cx + bw * 0.25, midY - size * 0.16);
+        ctx.bezierCurveTo(cx + bw * 0.25, midY - size * 0.07, cx + bw * 0.08, midY - size * 0.03, cx, midY);
+        ctx.bezierCurveTo(cx + bw * 0.08, midY + size * 0.03, cx + bw * 0.25, midY + size * 0.07, cx + bw * 0.25, midY + size * 0.16);
+        ctx.bezierCurveTo(cx + bw * 0.25, midY + size * 0.42, cx + bw * 0.25, bot, cx + bw * 0.92, bot);
+        ctx.stroke();
+        ctx.restore();
+        const lx = cx + bw + size * 0.1;
+        drawTokens(ctx, tok.lines[0], lx, yBase - size * 0.38, s2);
+        drawTokens(ctx, tok.lines[1], lx, yBase + size * 0.62, s2);
+        cx += bw + size * 0.1 + lw;
         break;
       }
       case 'graph': {
