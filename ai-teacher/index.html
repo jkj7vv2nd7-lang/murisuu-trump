@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Math Quartet｜AI先生 試作</title>
+<style>
+:root{color-scheme:light;--ink:#263445;--muted:#65758b;--line:#dce5ef;--blue:#3478b8;--pale:#edf5fc;--paper:#fff;--bg:#f4f7fb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.65}
+main{width:min(900px,100% - 28px);margin:34px auto}.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}.mark{width:48px;height:48px;border-radius:15px;background:linear-gradient(145deg,#6ca7df,#8b77c9);color:white;display:grid;place-items:center;font-size:27px;font-weight:800}.eyebrow{color:var(--blue);font-size:12px;font-weight:700;letter-spacing:.08em}.top h1{font-size:clamp(22px,4vw,30px);margin:0}.intro{color:var(--muted);margin:0 0 22px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:clamp(16px,4vw,28px);box-shadow:0 10px 30px #2634450b}.status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin-bottom:16px}.dot{width:9px;height:9px;border-radius:50%;background:#d39a35}.dot.ok{background:#2e9c68}.label{font-weight:700;display:block;margin:14px 0 7px}select,textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;color:var(--ink);background:white}textarea{min-height:110px;resize:vertical}button{font:inherit;cursor:pointer}.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 16px}.chip{border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:white;color:#385a7b;font-size:13px}.primary{background:var(--blue);color:white;border:0;border-radius:12px;padding:12px 20px;font-weight:700}.primary:disabled{opacity:.55;cursor:wait}.actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.hint{color:var(--muted);font-size:12px}.answer{margin-top:22px;border:1px solid var(--line);border-radius:16px;overflow:hidden}.answerhead{background:var(--pale);padding:11px 16px;font-weight:700}.answerbody{padding:18px;white-space:pre-wrap;overflow-wrap:anywhere;min-height:70px}.placeholder{color:var(--muted)}.error{color:#a33}.foot{color:var(--muted);font-size:12px;margin:18px 4px}.foot code{background:#e9eef5;padding:2px 5px;border-radius:5px}@media(max-width:560px){main{margin:18px auto}.top{align-items:flex-start}}
+</style>
+</head>
+<body>
+<main>
+  <header class="top"><div class="mark" aria-hidden="true">√</div><div><div class="eyebrow">MATH QUARTET · LOCAL AI PREVIEW</div><h1>AI先生（試作版）</h1></div></header>
+  <p class="intro">数学の「なぜ？」を、順番に、やさしい言葉で説明します。質問と回答はこのPC上のOllamaで処理します。</p>
+  <section class="panel">
+    <div class="status"><span id="dot" class="dot"></span><span id="status">Ollamaに接続できるか確認しています…</span></div>
+    <label class="label" for="level">学習段階</label>
+    <select id="level"><option>中学1年</option><option>中学2年</option><option selected>中学3年</option><option>高校入試の応用</option></select>
+    <label class="label" for="question">質問を書いてください</label>
+    <textarea id="question" maxlength="1200" placeholder="例：√12 を 2√3 にする方法が分かりません。"></textarea>
+    <div class="chips" aria-label="質問例">
+      <button class="chip" type="button" data-q="√12 を 2√3 にする方法を、途中式を省略せずに教えてください。">平方根の簡単化</button>
+      <button class="chip" type="button" data-q="一次方程式 3x + 5 = 20 の解き方を教えてください。">一次方程式</button>
+      <button class="chip" type="button" data-q="y = 2x + 1 のグラフの特徴を説明してください。">一次関数</button>
+      <button class="chip" type="button" data-q="因数分解 x² + 5x + 6 の考え方を教えてください。">因数分解</button>
+    </div>
+    <div class="actions"><button id="ask" class="primary" type="button">AI先生に質問する</button><span class="hint">回答には少し時間がかかることがあります。</span></div>
+    <section class="answer" aria-live="polite"><div class="answerhead">AI先生の説明</div><div id="answer" class="answerbody placeholder">質問を入力して「AI先生に質問する」を押してください。</div></section>
+  </section>
+  <p class="foot">試作版です。回答は必ず教科書や先生の説明とも照らし合わせてください。個人情報は入力しないでください。利用モデル：<code>qwen3.5:4b</code></p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+async function check(){
+ try{const r=await fetch('/api/health');const d=await r.json();if(!r.ok)throw new Error(d.error||'接続できません');$('dot').classList.add('ok');$('status').textContent='Ollama接続済み · '+d.model;}
+ catch(e){$('status').textContent='Ollamaに接続できません。READMEの起動手順を確認してください。';}
+}
+document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>{$('question').value=b.dataset.q;$('question').focus();}));
+$('ask').addEventListener('click',async()=>{
+ const question=$('question').value.trim();if(!question){$('answer').textContent='まず質問を入力してください。';$('answer').classList.add('placeholder');return;}
+ const btn=$('ask');btn.disabled=true;btn.textContent='考えています…';$('answer').classList.remove('placeholder','error');$('answer').textContent='AI先生が説明を準備しています。';
+ try{
+  const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,level:$('level').value})});
+  const d=await r.json();if(!r.ok)throw new Error(d.error||'回答を取得できませんでした。');$('answer').textContent=d.answer||'回答が空でした。';
+ }catch(e){$('answer').classList.add('error');$('answer').textContent='エラー：'+e.message+'\n\nOllamaが起動しているか、指定モデルがインストールされているか確認してください。';}
+ finally{btn.disabled=false;btn.textContent='AI先生に質問する';}
+});
+$('question').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')$('ask').click();});
+check();
+</script>
+</body>
+</html>
